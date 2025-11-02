@@ -66,13 +66,13 @@ abstract class Grammar{
   variables: Set<string>
   terminals: Set<string>
   startVariable: string
-  production: never[]
+  productions: Production[]
 
   constructor(){
     this.variables = new Set()
     this.terminals = new Set()
     this.startVariable = ""
-    this.production = []
+    this.productions = []
   }
 
   abstract isConverted(): boolean
@@ -93,6 +93,108 @@ abstract class Grammar{
     return false
   }
 }
+  addProduction(production: Production) {
+      this.checkProduction(production);
+    
+      // Don't add duplicates
+      if (this.productions.some(p => p.equal(production))) {
+        return;
+      }
+    
+      this.productions.push(production);
+    
+      // Auto-track variables and terminals
+      production.getVariables().forEach(v => this.variables.add(v));
+      production.getTerminals().forEach(t => this.terminals.add(t));
+  }
+  removeProduction(production: Production) {
+    const index = this.productions.findIndex(p => p.equal(production));
+    if (index !== -1) {
+      this.productions.splice(index, 1);
+      
+      // Clean up unused variables
+      production.getVariables().forEach(v => {
+        if (!this.isVariableInProductions(v)) {
+          this.variables.delete(v);
+        }
+      });
+      
+      // Clean up unused terminals
+      production.getTerminals().forEach(t => {
+        if (!this.isTerminalInProductions(t)) {
+          this.terminals.delete(t);
+        }
+      });
+    }
+  }
+  isVariableInProductions(variable: string) {
+    return this.productions.some(p => p.getVariables().includes(variable));
+  }
+  isTerminalInProductions(terminal: string) {
+    return this.productions.some(p => p.getTerminals().includes(terminal));
+  }
+
+  getProductions() {
+    return [...this.productions];
+  }
+
+  getProductionsFor(variable: string) {
+    return this.productions.filter(p => p.lhs === variable);
+  }
+
+  getTerminals() {
+    return Array.from(this.terminals);
+  }
+
+  getVariables() {
+    return Array.from(this.variables);
+  }
+
+  isProduction(production: Production) {
+    return this.productions.some(p => p.equal(production));
+  }
+
+  isTerminal(terminal: string) {
+    return this.terminals.has(terminal);
+  }
+
+  isVariable(variable: string) {
+    return this.variables.has(variable);
+  }
+
+  toString() {
+    let result = 'Grammar:\n';
+    result += `V: ${Array.from(this.variables).join(' ')}\n`;
+    result += `T: ${Array.from(this.terminals).join(' ')}\n`;
+    result += `S: ${this.startVariable || 'none'}\n`;
+    result += 'P:\n';
+    this.productions.forEach(p => {
+      result += `  ${p.toString()}\n`;
+    });
+    return result;
+  }
+
+  // Serialize grammar for storage
+  toJSON() {
+    return {
+      startVariable: this.startVariable,
+      productions: this.productions.map(p => ({ lhs: p.lhs, rhs: p.rhs }))
+    };
+  }
+
+  // Load from serialized data
+  static fromJSON(data: { startVariable: any; productions: any[]; }, GrammarClass: new () => any) {
+    const grammar = new GrammarClass();
+    grammar.setStartVariable(data.startVariable || 'S');
+    data.productions.forEach(p => {
+      try {
+        grammar.addProduction(new Production(p.lhs, p.rhs));
+      } catch (e) {
+        console.warn('Skipped invalid production:', p, e);
+      }
+    });
+    return grammar;
+  }
 
 }
 
