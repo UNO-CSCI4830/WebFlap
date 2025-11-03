@@ -7,6 +7,7 @@ import Home from './Home.tsx'
 import Grammars from './Grammars.tsx'
 import BruteForceParse from './BruteForceParse'
 import Automatons from './Automatons.tsx'
+import ProjectSelection from './ProjectSelection.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -17,6 +18,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/grammars" element={<Grammars />} />
         <Route path="/bruteforce" element={<BruteForceParse />} />
         <Route path="/automatons" element={<Automatons />} />
+        <Route path="/new" element={<ProjectSelection />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
