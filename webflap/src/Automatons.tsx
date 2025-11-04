@@ -1,10 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './Automatons.css';
+
+// Simple state interface
+interface State {
+  id: string;
+  x: number;
+  y: number;
+}
 
 function Automatons() {
   // Track which menu is open
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  
+  // Automaton data
+  const [states, setStates] = useState<State[]>([]);
+  const [stateCount, setStateCount] = useState(0);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -12,13 +24,63 @@ function Automatons() {
       const target = e.target as HTMLElement | null;
       if (!target || !target.closest('.menu-bar')) {
         setOpenMenu(null);
-        setOpenSubmenu(null);
       }
     };
 
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
+
+  // Draw states on canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw each state
+    states.forEach(state => {
+      // Draw circle
+      ctx.beginPath();
+      ctx.arc(state.x, state.y, 30, 0, Math.PI * 2);
+      ctx.fillStyle = '#fef3c7';
+      ctx.fill();
+      ctx.strokeStyle = '#2563eb';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw label
+      ctx.fillStyle = '#000';
+      ctx.font = '16px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(state.id, state.x, state.y);
+    });
+  }, [states]);
+
+  // Click to add state
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Add new state
+    const newState: State = {
+      id: `q${stateCount}`,
+      x: x,
+      y: y
+    };
+    
+    setStates([...states, newState]);
+    setStateCount(stateCount + 1);
+  };
 
   return (
     <div className="jflap-container">
@@ -161,7 +223,13 @@ function Automatons() {
 
         {/* Canvas for drawing automatons */}
         <div className="canvas-container">
-          <canvas id="automaton-canvas" width="800" height="600"></canvas>
+          <canvas 
+            ref={canvasRef}
+            id="automaton-canvas" 
+            width="1200" 
+            height="700"
+            onClick={handleCanvasClick}
+          ></canvas>
         </div>
       </div>
     </div>
