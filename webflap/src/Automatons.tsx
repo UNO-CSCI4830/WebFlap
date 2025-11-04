@@ -15,6 +15,9 @@ function Automatons() {
   // Automaton data
   const [states, setStates] = useState<State[]>([]);
   const [stateCount, setStateCount] = useState(0);
+  
+  // Track which tool is selected
+  const [selectedTool, setSelectedTool] = useState<string>('');
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -66,6 +69,9 @@ function Automatons() {
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Only place states if the state tool is selected
+    if (selectedTool !== 'state') return;
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -201,16 +207,32 @@ function Automatons() {
         
         {/* Toolbar with 6 buttons */}
         <div className="toolbar">
-          <button className="tool-button" title="Select">
+          <button 
+            className={`tool-button ${selectedTool === 'select' ? 'active' : ''}`}
+            title="Select"
+            onClick={() => setSelectedTool('select')}
+          >
             ➤
           </button>
-          <button className="tool-button" title="Add State">
+          <button 
+            className={`tool-button ${selectedTool === 'state' ? 'active' : ''}`}
+            title="Add State"
+            onClick={() => setSelectedTool('state')}
+          >
             ⓠ
           </button>
-          <button className="tool-button" title="Add Transition">
+          <button 
+            className={`tool-button ${selectedTool === 'transition' ? 'active' : ''}`}
+            title="Add Transition"
+            onClick={() => setSelectedTool('transition')}
+          >
             →
           </button>
-          <button className="tool-button" title="Delete">
+          <button 
+            className={`tool-button ${selectedTool === 'delete' ? 'active' : ''}`}
+            title="Delete"
+            onClick={() => setSelectedTool('delete')}
+          >
             ☠
           </button>
           <button className="tool-button" title="Undo">
