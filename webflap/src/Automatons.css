@@ -156,6 +156,12 @@
   transform: translateY(0);
 }
 
+.tool-button.active {
+  background-color: #2563eb;
+  color: white;
+  border-color: #1d4ed8;
+}
+
 /* Canvas container */
 .canvas-container {
   flex: 1;
