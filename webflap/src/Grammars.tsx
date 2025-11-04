@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './Grammars.css';
 
-class Production{
+export class Production{
   lhs: string
   rhs: string
   constructor(lhs: string, rhs: string){
@@ -61,7 +61,7 @@ class Production{
 
 }
 
-abstract class Grammar{
+export abstract class Grammar{
 
   variables: Set<string>
   terminals: Set<string>
@@ -94,84 +94,84 @@ abstract class Grammar{
   }
 }
   addProduction(production: Production) {
-      this.checkProduction(production);
+      this.checkProduction(production)
     
       // Don't add duplicates
       if (this.productions.some(p => p.equal(production))) {
-        return;
+        return
       }
     
-      this.productions.push(production);
+      this.productions.push(production)
     
       // Auto-track variables and terminals
-      production.getVariables().forEach(v => this.variables.add(v));
-      production.getTerminals().forEach(t => this.terminals.add(t));
+      production.getVariables().forEach(v => this.variables.add(v))
+      production.getTerminals().forEach(t => this.terminals.add(t))
   }
   removeProduction(production: Production) {
-    const index = this.productions.findIndex(p => p.equal(production));
+    const index = this.productions.findIndex(p => p.equal(production))
     if (index !== -1) {
-      this.productions.splice(index, 1);
+      this.productions.splice(index, 1)
       
       // Clean up unused variables
       production.getVariables().forEach(v => {
         if (!this.isVariableInProductions(v)) {
-          this.variables.delete(v);
+          this.variables.delete(v)
         }
-      });
+      })
       
       // Clean up unused terminals
       production.getTerminals().forEach(t => {
         if (!this.isTerminalInProductions(t)) {
-          this.terminals.delete(t);
+          this.terminals.delete(t)
         }
-      });
+      })
     }
   }
   isVariableInProductions(variable: string) {
-    return this.productions.some(p => p.getVariables().includes(variable));
+    return this.productions.some(p => p.getVariables().includes(variable))
   }
   isTerminalInProductions(terminal: string) {
-    return this.productions.some(p => p.getTerminals().includes(terminal));
+    return this.productions.some(p => p.getTerminals().includes(terminal))
   }
 
   getProductions() {
-    return [...this.productions];
+    return [...this.productions]
   }
 
   getProductionsFor(variable: string) {
-    return this.productions.filter(p => p.lhs === variable);
+    return this.productions.filter(p => p.lhs === variable)
   }
 
   getTerminals() {
-    return Array.from(this.terminals);
+    return Array.from(this.terminals)
   }
 
   getVariables() {
-    return Array.from(this.variables);
+    return Array.from(this.variables)
   }
 
   isProduction(production: Production) {
-    return this.productions.some(p => p.equal(production));
+    return this.productions.some(p => p.equal(production))
   }
 
   isTerminal(terminal: string) {
-    return this.terminals.has(terminal);
+    return this.terminals.has(terminal)
   }
 
   isVariable(variable: string) {
-    return this.variables.has(variable);
+    return this.variables.has(variable)
   }
 
   toString() {
     let result = 'Grammar:\n';
-    result += `V: ${Array.from(this.variables).join(' ')}\n`;
-    result += `T: ${Array.from(this.terminals).join(' ')}\n`;
-    result += `S: ${this.startVariable || 'none'}\n`;
-    result += 'P:\n';
+    result += `V: ${Array.from(this.variables).join(' ')}\n`
+    result += `T: ${Array.from(this.terminals).join(' ')}\n`
+    result += `S: ${this.startVariable || 'none'}\n`
+    result += 'P:\n'
     this.productions.forEach(p => {
-      result += `  ${p.toString()}\n`;
-    });
-    return result;
+      result += `  ${p.toString()}\n`
+    })
+    return result
   }
 
   // Serialize grammar for storage
@@ -184,18 +184,52 @@ abstract class Grammar{
 
   // Load from serialized data
   static fromJSON(data: { startVariable: any; productions: any[]; }, GrammarClass: new () => any) {
-    const grammar = new GrammarClass();
-    grammar.setStartVariable(data.startVariable || 'S');
+    const grammar = new GrammarClass()
+    grammar.setStartVariable(data.startVariable || 'S')
     data.productions.forEach(p => {
       try {
-        grammar.addProduction(new Production(p.lhs, p.rhs));
+        grammar.addProduction(new Production(p.lhs, p.rhs))
       } catch (e) {
-        console.warn('Skipped invalid production:', p, e);
+        console.warn('Skipped invalid production:', p, e)
       }
     });
-    return grammar;
+    return grammar
   }
+}
 
+export class ConcreteGrammar extends Grammar {
+  isConverted(): boolean {
+    return false;
+  }
+  checkProduction(production: Production): void {
+    // minimal validation: allow anything non-empty LHS and RHS
+    if (!production.lhs || production.lhs.trim() === '') {
+      throw new Error('LHS cannot be empty');
+    }
+    if (production.rhs === undefined || production.rhs === null) {
+      throw new Error('RHS cannot be null');
+    }
+  }
+}
+
+class ContextFreeGrammar extends Grammar {
+  isConverted() {
+    return false
+  }
+  checkProduction(production: Production) {
+    //LHS cannot be empty
+    if (!production.lhs || production.lhs.trim() === ""){
+      throw new Error("LHS cannot be empty")
+    }
+    // LHS must be a single variable for CFG
+    if (production.lhs.length !== 1 || !/[A-Z]/.test(production.lhs)) {
+      throw new Error('LHS must be a single uppercase variable for CFG')
+    }
+    //RHS has to contain something
+    if (production.rhs === undefined || production.rhs === null) {
+      throw new Error('RHS cannot be null')
+    }
+  }
 }
 
 
@@ -339,12 +373,21 @@ function Grammars() {
               <div
                 className="menu-option"
                 onClick={() => {
-                  // Prepare grammar and open brute force parse in a new tab
-                  const nonEmpty = productions.filter(p => (p.lhs && p.lhs.trim() !== '') || (p.rhs && p.rhs.trim() !== ''))
-                    .map(p => ({ lhs: p.lhs, rhs: p.rhs }));
-                  try {
-                    localStorage.setItem('webflap:bruteForceGrammar', JSON.stringify(nonEmpty));
-                  } catch (err) {
+                  try{
+                    const grammarWrapper = new ConcreteGrammar();
+                    productions.forEach(p => {
+                    const lhs = p.lhs.trim();
+                    const rhs = p.rhs.trim();
+                    if (lhs !== '' || rhs !== '') {
+                      grammarWrapper.addProduction(new Production(lhs, rhs));
+                    }
+                    });
+                    grammarWrapper.setStartVariable(productions.find(p => p.lhs.trim() !== '')?.lhs.trim() || 'S');
+
+                    localStorage.setItem('webflap:bruteForceGrammar', JSON.stringify(grammarWrapper.toJSON()));
+                    
+                  }
+                  catch (err) {
                     console.error('Failed to save grammar to localStorage', err);
                   }
                   // open new tab at route /bruteforce

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import './Grammars.css';
+import { ConcreteGrammar } from './Grammars';
 
 type Prod = { lhs: string; rhs: string };
 
@@ -14,8 +15,13 @@ function BruteForceParse() {
     try {
       const raw = localStorage.getItem('webflap:bruteForceGrammar');
       if (raw) {
-        const parsed = JSON.parse(raw) as Prod[];
-        setProductions(parsed);
+        const data = JSON.parse(raw)
+        const grammar = ConcreteGrammar.fromJSON(data, ConcreteGrammar)
+        const parsedProds = grammar.getProductions().map((p: { lhs: any; rhs: any; }) => ({
+          lhs: p.lhs,
+          rhs: p.rhs
+        }))
+        setProductions(parsedProds);
       }
     } catch (err) {
       console.error('Failed to load grammar from localStorage', err);
