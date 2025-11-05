@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './Grammars.css';
 
 export class Production{
@@ -245,6 +245,31 @@ function Grammars() {
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  
+  const lastFocusedInput = useRef<HTMLInputElement | null>(null);
+
+  // Insert epsilon into the last-focused input (if any)
+  const insertEpsilon = () => {
+    const active = lastFocusedInput.current;
+    if (active && active.tagName === 'INPUT') {
+      const prodIdAttr = active.getAttribute('data-prod-id');
+      const field = active.getAttribute('data-field') as 'lhs' | 'rhs' | null;
+      const start = active.selectionStart ?? active.value.length;
+      const end = active.selectionEnd ?? start;
+      const newVal = active.value.slice(0, start) + 'ε' + active.value.slice(end);
+      // Update DOM value and caret
+      active.value = newVal;
+      const caret = start + 1;
+      try { active.setSelectionRange(caret, caret); } catch (e) { /* ignore */ }
+
+      if (prodIdAttr && field) {
+        const id = Number(prodIdAttr);
+        updateProduction(id, field, newVal);
+      }
+      // restore focus to the input (defensive)
+      try { active.focus(); } catch (e) { /* ignore */ }
+    }
+  };
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -568,6 +593,16 @@ function Grammars() {
             </div>
           )}
         </div>
+
+        <div className="menu-item">
+          <button
+            className="menu-button"
+            title="Insert epsilon (ε) into focused production field"
+            onMouseDown={(e) => { e.preventDefault(); insertEpsilon(); }}
+          >
+            ε
+          </button>
+        </div>
       </div>
 
       <div className="editor-section">
@@ -589,6 +624,9 @@ function Grammars() {
                     <input
                       type="text"
                       value={prod.lhs}
+                      data-prod-id={prod.id}
+                      data-field="lhs"
+                      onFocus={(e) => { lastFocusedInput.current = e.target as HTMLInputElement; }}
                       onChange={(e) => updateProduction(prod.id, 'lhs', e.target.value)}
                       placeholder=""
                     />
@@ -598,6 +636,9 @@ function Grammars() {
                     <input
                       type="text"
                       value={prod.rhs}
+                      data-prod-id={prod.id}
+                      data-field="rhs"
+                      onFocus={(e) => { lastFocusedInput.current = e.target as HTMLInputElement; }}
                       onChange={(e) => updateProduction(prod.id, 'rhs', e.target.value)}
                       placeholder=""
                     />
