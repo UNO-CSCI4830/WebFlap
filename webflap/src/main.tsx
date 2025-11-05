@@ -7,7 +7,8 @@ import Grammars from "./Grammars.tsx";
 import BruteForceParse from "./BruteForceParse";
 import Automata from "./Automata.tsx";
 import ProjectSelection from "./ProjectSelection.tsx";
-import Features from "./Features.tsx"; // ✅ added Features page
+import Features from "./Features.tsx";
+import Tutorials from "./Tutorials.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -19,6 +20,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/automata" element={<Automata />} />
         <Route path="/new" element={<ProjectSelection />} />
         <Route path="/features" element={<Features />} />
+        <Route path="/tutorials" element={<Tutorials />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>

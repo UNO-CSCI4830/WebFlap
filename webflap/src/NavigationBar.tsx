@@ -6,7 +6,7 @@ export default function NavigationBar() {
   const [isOpen, setIsOpen] = useState(false);
 
   const navLinks = [
-    { name: "Home", path: "/home" },
+    { name: "Home", path: "/" },
     { name: "Features", path: "/features" },
     { name: "Tutorials", path: "/tutorials" },
   ];
@@ -16,7 +16,7 @@ export default function NavigationBar() {
       <nav className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
         {/* Brand */}
         <Link
-          to="/home"
+          to="/"
           className="text-3xl font-bold tracking-tight text-slate-900 hover:text-blue-900 transition-colors"
         >
           WebFlap
