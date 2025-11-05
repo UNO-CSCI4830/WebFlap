@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import NavigationBar from "./NavigationBar";
 import './Grammars.css';
 
 export class Production{
@@ -301,10 +302,7 @@ function Grammars() {
 
   return (
     <div className="jflap-container">
-      <div className="jflap-title-bar">
-        <span>WebFlap: Grammars</span>
-      </div>
-      
+      <NavigationBar />  
       <div className="menu-bar">
         <div className="menu-item">
           <button 
@@ -606,7 +604,7 @@ function Grammars() {
       </div>
 
       <div className="editor-section">
-        <div className="editor-tab">Editor</div>
+        <div className="editor-tab">Grammar Editor</div>
         
         <div className="grammar-table">
           <table>

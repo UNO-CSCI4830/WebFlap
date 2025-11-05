@@ -54,25 +54,21 @@ export default function Home() {
                 {[
                     {
                     title: "Automata Builder",
-                    desc: "Create and simulate DFAs and NFAs with an intuitive drag-and-drop interface. Define states, transitions, and test input strings instantly.",
-                    icon: "🛠️",
+                    desc: "Create and simulate DFAs and NFAs with an intuitive drag-and-drop interface. Define states, transitions, and test input strings instantly."
                     },
                     {
                     title: "Grammar & Regex Tools",
-                    desc: "Design grammars and regular expressions with ease. Convert into automata and visualize the structure of formal languages effortlessly.",
-                    icon: "📄",
+                    desc: "Design grammars and regular expressions with ease. Convert into automata and visualize the structure of formal languages effortlessly."
                     },
                     {
                     title: "Modern & Accessible",
-                    desc: "All in your browser — no extra installs required. Fast, responsive, and ready for classrooms or solo projects.",
-                    icon: "🌐",
+                    desc: "All in your browser — no extra installs required. Fast, responsive, and ready for classrooms or solo projects."
                     },
                 ].map((f) => (
                     <div
                     key={f.title}
                     className="rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-md shadow-sm p-6 transition-transform duration-300 hover:scale-105 hover:shadow-md"
                     >
-                    <div className="text-3xl mb-3">{f.icon}</div>
                     <h3 className="text-xl font-semibold mb-2">{f.title}</h3>
                     <p className="text-slate-600">{f.desc}</p>
                     </div>
