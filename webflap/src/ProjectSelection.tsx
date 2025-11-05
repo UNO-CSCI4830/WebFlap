@@ -16,17 +16,12 @@ export default function ProjectSelection() {
               {
                 name: "Grammars",
                 description: "Create and analyze formal grammars.",
-                link: "/projects/grammars",
+                link: "/grammars",
               },
               {
                 name: "Automata",
                 description: "Design and simulate finite automata.",
-                link: "/projects/automata",
-              },
-              {
-                name: "Etc",
-                description: "Hi.",
-                link: "",
+                link: "/automata",
               },
             ].map((project) => (
               <Link

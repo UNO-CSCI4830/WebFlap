@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import "./Automata.css";
+import NavigationBar from "./NavigationBar";
+
 
 // Simple state interface
 interface State {
@@ -91,9 +93,7 @@ function Automata() {
   return (
     <div className="jflap-container">
       {/* Title bar */}
-      <div className="jflap-title-bar">
-        <span>WebFlap: Automata</span>
-      </div>
+      <NavigationBar />
 
       {/* Menu bar */}
       <div className="menu-bar">
@@ -207,7 +207,7 @@ function Automata() {
 
       {/* Editor section with canvas */}
       <div className="editor-section">
-        <div className="editor-tab">Editor</div>
+        <div className="editor-tab">Automata Editor</div>
 
         {/* Toolbar with 6 buttons */}
         <div className="toolbar">
