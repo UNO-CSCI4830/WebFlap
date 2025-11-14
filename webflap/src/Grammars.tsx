@@ -213,26 +213,31 @@ export class ConcreteGrammar extends Grammar {
   }
 }
 
-class ContextFreeGrammar extends Grammar {
-  isConverted() {
-    return false
-  }
-  checkProduction(production: Production) {
-    //LHS cannot be empty
-    if (!production.lhs || production.lhs.trim() === ""){
-      throw new Error("LHS cannot be empty")
+  function contextFreeCheck(grammar: ConcreteGrammar) {
+    let productions = grammar.getProductions();
+    for (let i = 0; i < productions.length; i++ ){
+       //LHS cannot be empty
+    if (!productions[i].lhs || productions[i].lhs.trim() === ""){
+      return false;
     }
     // LHS must be a single variable for CFG
-    if (production.lhs.length !== 1 || !/[A-Z]/.test(production.lhs)) {
-      throw new Error('LHS must be a single uppercase variable for CFG')
+    if (productions[i].lhs.length !== 1 || !/[A-Z]/.test(productions[i].lhs)) {
+      return false
     }
     //RHS has to contain something
-    if (production.rhs === undefined || production.rhs === null) {
-      throw new Error('RHS cannot be null')
+    if (productions[i].rhs === undefined || productions[i].rhs === null) {
+      return false;
+    }
+    }
+    return true; 
+  }
+
+  function regularGrammarCheck(grammar: ConcreteGrammar) {
+    let productions = grammar.getProductions();
+    for (let i = 0; i < productions.length; i++){
+      
     }
   }
-}
-
 
 function Grammars() {
   const [productions, setProductions] = useState([
@@ -471,6 +476,29 @@ function Grammars() {
               </div>
             </div>
           )}
+        </div>
+
+        <div className="menu-item">
+          <button 
+          className="menu-button" 
+          onClick={() => setOpenMenu(openMenu === 'test' ? null : 'test')}
+          >
+            Test
+          </button>
+          {openMenu === 'test' && (
+            <div className="dropdown-menu">
+              <div
+                className="menu-option"
+                onClick={() => {
+                  const id = `test:Test for Grammar Type`;
+                  
+                }}
+              >
+                Test for Grammar Type
+              </div> 
+            </div>
+          )}
+
         </div>
 
         <div className="menu-item">
