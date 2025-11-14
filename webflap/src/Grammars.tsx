@@ -214,29 +214,45 @@ export class ConcreteGrammar extends Grammar {
 }
 
   function contextFreeCheck(grammar: ConcreteGrammar) {
-    let productions = grammar.getProductions();
+    let productions = grammar.getProductions()
     for (let i = 0; i < productions.length; i++ ){
-       //LHS cannot be empty
-    if (!productions[i].lhs || productions[i].lhs.trim() === ""){
-      return false;
+        //LHS cannot be empty
+      if (!productions[i].lhs || productions[i].lhs.trim() === ""){
+        return false
+      }
+      // LHS must be a single variable for CFG
+      if (productions[i].lhs.length !== 1 || !/[A-Z]/.test(productions[i].lhs)) {
+        return false
+      }
+      //RHS has to contain something
+      if (productions[i].rhs === undefined || productions[i].rhs === null) {
+        return false
+      }
     }
-    // LHS must be a single variable for CFG
-    if (productions[i].lhs.length !== 1 || !/[A-Z]/.test(productions[i].lhs)) {
-      return false
-    }
-    //RHS has to contain something
-    if (productions[i].rhs === undefined || productions[i].rhs === null) {
-      return false;
-    }
-    }
-    return true; 
+    return true
   }
 
-  function regularGrammarCheck(grammar: ConcreteGrammar) {
-    let productions = grammar.getProductions();
+  function rightLinearCheck(grammar: ConcreteGrammar) {
+    let productions = grammar.getProductions()
     for (let i = 0; i < productions.length; i++){
-      
+      //LHS cannot be empty
+      if (!productions[i].lhs || productions[i].lhs.trim() === ""){
+        return false
+      }
+      // LHS must be a single variable for Right Linear Grammar
+      if (productions[i].lhs.length !== 1 || !/[A-Z]/.test(productions[i].lhs)) {
+        return false
+      }
+      // RHS cannot have only one non-terminal symbol
+      if (productions[i].rhs.length === 1 && /[A-Z]/.test(productions[i].rhs)){
+        return false
+      }
+      // RHS cannot have terminals or non-termianls following a non-terminal symbol for an Right-Linear Grammar
+      if (/[A-Z](?:[A-Za-z])+/.test(productions[i].rhs)){
+        return false
+      }
     }
+    return true
   }
 
 function Grammars() {
@@ -490,8 +506,16 @@ function Grammars() {
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `test:Test for Grammar Type`;
-                  
+                    const grammarWrapper = new ConcreteGrammar();
+                    productions.forEach(p => {
+                    const lhs = p.lhs.trim();
+                    const rhs = p.rhs.trim();
+                    if (lhs !== '' || rhs !== '') {
+                      grammarWrapper.addProduction(new Production(lhs, rhs));
+                    }
+                    });
+                    console.log(contextFreeCheck(grammarWrapper));
+                    console.log(rightLinearCheck(grammarWrapper));
                 }}
               >
                 Test for Grammar Type
