@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import NavigationBar from "./NavigationBar";
+import Modal from './PopCard';
 import './Grammars.css';
 
 export class Production{
@@ -255,6 +256,29 @@ export class ConcreteGrammar extends Grammar {
     return true
   }
 
+  function leftLinearCheck(grammar: ConcreteGrammar) {
+    let productions = grammar.getProductions()
+    for (let i = 0; i < productions.length; i++){
+      //LHS cannot be empty
+      if (!productions[i].lhs || productions[i].lhs.trim() === ""){
+        return false
+      }
+      // LHS must be a single variable for Right Linear Grammar
+      if (productions[i].lhs.length !== 1 || !/[A-Z]/.test(productions[i].lhs)) {
+        return false
+      }
+      // RHS cannot have only one non-terminal symbol
+      if (productions[i].rhs.length === 1 && /[A-Z]/.test(productions[i].rhs)){
+        return false
+      }
+      // RHS cannot have terminals or non-termianls following a non-terminal symbol for an Right-Linear Grammar
+      if (/(?:[A-Za-z])+[A-Z]/.test(productions[i].rhs)){
+        return false
+      }
+    }
+    return true
+  }
+
 function Grammars() {
   const [productions, setProductions] = useState([
     { id: 1, lhs: '', rhs: '' },
@@ -267,6 +291,7 @@ function Grammars() {
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [openGrammarTest, setOpenCard] = useState<boolean>(false);
   
   const lastFocusedInput = useRef<HTMLInputElement | null>(null);
 
@@ -506,6 +531,7 @@ function Grammars() {
               <div
                 className="menu-option"
                 onClick={() => {
+                    setOpenCard(true);
                     const grammarWrapper = new ConcreteGrammar();
                     productions.forEach(p => {
                     const lhs = p.lhs.trim();
@@ -520,6 +546,9 @@ function Grammars() {
               >
                 Test for Grammar Type
               </div> 
+              <Modal open={openGrammarTest} onClose={() => {setOpenCard(false)}} >
+                Your grammar works!
+              </Modal>
             </div>
           )}
 
