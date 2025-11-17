@@ -10,6 +10,13 @@ interface State {
   y: number;
 }
 
+// Transition interface
+interface Transition {
+  from: string;
+  to: string;
+  label: string;
+}
+
 function Automata() {
   // Track which menu is open
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -17,9 +24,14 @@ function Automata() {
   // Automaton data
   const [states, setStates] = useState<State[]>([]);
   const [stateCount, setStateCount] = useState(0);
+  const [transitions, setTransitions] = useState<Transition[]>([]);
 
   // Track which tool is selected
   const [selectedTool, setSelectedTool] = useState<string>("");
+
+  // Transition dragging
+  const [dragFrom, setDragFrom] = useState<string | null>(null);
+  const [dragTo, setDragTo] = useState<{ x: number; y: number } | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -36,7 +48,15 @@ function Automata() {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  // Draw states on canvas
+  // Helper to find state at position
+  const getStateAt = (x: number, y: number): State | null => {
+    return states.find((s) => {
+      const dist = Math.sqrt((s.x - x) ** 2 + (s.y - y) ** 2);
+      return dist <= 30;
+    }) || null;
+  };
+
+  // Draw everything on canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -44,12 +64,100 @@ function Automata() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw each state
+    // Group transitions by from-to pair
+    const groupedTransitions = new Map<string, string[]>();
+    transitions.forEach((t) => {
+      const key = `${t.from}->${t.to}`;
+      if (!groupedTransitions.has(key)) {
+        groupedTransitions.set(key, []);
+      }
+      groupedTransitions.get(key)!.push(t.label);
+    });
+
+    // Draw transitions
+    groupedTransitions.forEach((labels, key) => {
+      const [fromId, toId] = key.split('->');
+      const from = states.find((s) => s.id === fromId);
+      const to = states.find((s) => s.id === toId);
+      if (!from || !to) return;
+
+      if (from.id === to.id) {
+        // Self-loop
+        ctx.beginPath();
+        ctx.arc(from.x, from.y - 45, 20, 0, Math.PI * 2);
+        ctx.strokeStyle = "#2563eb";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = "#000";
+        ctx.font = "14px Arial";
+        ctx.textAlign = "center";
+        
+        // Draw labels stacked vertically (newest on top)
+        labels.forEach((lbl, i) => {
+          ctx.fillText(lbl, from.x, from.y - 75 - i * 16);
+        });
+      } else {
+        // Arrow between states
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        const startX = from.x + 30 * Math.cos(angle);
+        const startY = from.y + 30 * Math.sin(angle);
+        const endX = to.x - 30 * Math.cos(angle);
+        const endY = to.y - 30 * Math.sin(angle);
+
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = "#2563eb";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Arrowhead
+        const headlen = 15;
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(
+          endX - headlen * Math.cos(angle - Math.PI / 6),
+          endY - headlen * Math.sin(angle - Math.PI / 6)
+        );
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(
+          endX - headlen * Math.cos(angle + Math.PI / 6),
+          endY - headlen * Math.sin(angle + Math.PI / 6)
+        );
+        ctx.stroke();
+
+        // Draw labels stacked vertically (newest on top)
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2;
+        ctx.fillStyle = "#000";
+        ctx.font = "14px Arial";
+        ctx.textAlign = "center";
+        
+        labels.forEach((lbl, i) => {
+          ctx.fillText(lbl, midX, midY - 10 - i * 16);
+        });
+      }
+    });
+
+    // Draw drag preview
+    if (dragFrom && dragTo) {
+      const from = states.find((s) => s.id === dragFrom);
+      if (from) {
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.lineTo(dragTo.x, dragTo.y);
+        ctx.strokeStyle = "#9ca3af";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // Draw states
     states.forEach((state) => {
-      // Draw circle
       ctx.beginPath();
       ctx.arc(state.x, state.y, 30, 0, Math.PI * 2);
       ctx.fillStyle = "#fef3c7";
@@ -58,36 +166,72 @@ function Automata() {
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Draw label
       ctx.fillStyle = "#000";
       ctx.font = "16px Arial";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(state.id, state.x, state.y);
     });
-  }, [states]);
+  }, [states, transitions, dragFrom, dragTo]);
 
-  // Click to add state
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Mouse handlers
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    // Only place states if the state tool is selected
-    if (selectedTool !== "state") return;
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // Add new state
-    const newState: State = {
-      id: `q${stateCount}`,
-      x: x,
-      y: y,
-    };
+    if (selectedTool === "state") {
+      const newState: State = { id: `q${stateCount}`, x, y };
+      setStates([...states, newState]);
+      setStateCount(stateCount + 1);
+    } else if (selectedTool === "transition") {
+      const state = getStateAt(x, y);
+      if (state) {
+        setDragFrom(state.id);
+        setDragTo({ x, y });
+      }
+    }
+  };
 
-    setStates([...states, newState]);
-    setStateCount(stateCount + 1);
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!dragFrom) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setDragTo({ x, y });
+  };
+
+  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!dragFrom) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const toState = getStateAt(x, y);
+
+    if (toState) {
+      const label = prompt("Enter transition label:");
+      if (label !== null) {
+        const newTransition: Transition = {
+          from: dragFrom,
+          to: toState.id,
+          label: label || "ε",
+        };
+        setTransitions([...transitions, newTransition]);
+      }
+    }
+
+    setDragFrom(null);
+    setDragTo(null);
   };
 
   return (
@@ -262,7 +406,9 @@ function Automata() {
             id="automaton-canvas"
             width="1200"
             height="700"
-            onClick={handleCanvasClick}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
           ></canvas>
         </div>
       </div>
