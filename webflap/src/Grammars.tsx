@@ -292,6 +292,11 @@ function Grammars() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const [openGrammarTest, setOpenCard] = useState<boolean>(false);
+  const [grammarTestResults, setGrammarTestResults] = useState<{
+  isContextFree: boolean;
+  isRightLinear: boolean;
+  isLeftLinear: boolean;
+} | null>(null);
   
   const lastFocusedInput = useRef<HTMLInputElement | null>(null);
 
@@ -540,14 +545,36 @@ function Grammars() {
                       grammarWrapper.addProduction(new Production(lhs, rhs));
                     }
                     });
-                    console.log(contextFreeCheck(grammarWrapper));
-                    console.log(rightLinearCheck(grammarWrapper));
+                    let isContextFree = contextFreeCheck(grammarWrapper);
+                    let isRightLinear = rightLinearCheck(grammarWrapper);
+                    let isLeftLinear = leftLinearCheck(grammarWrapper);
+                    setGrammarTestResults({
+                      isContextFree,
+                      isRightLinear,
+                      isLeftLinear
+                })
+                    
                 }}
               >
                 Test for Grammar Type
               </div> 
               <Modal open={openGrammarTest} onClose={() => {setOpenCard(false)}} >
-                Your grammar works!
+                <div className="mt-4">
+                  <h2 className="text-xl font-bold mb-4">Grammar Test Results</h2>
+                  {grammarTestResults && (
+                    <div>
+                      {grammarTestResults.isContextFree && grammarTestResults.isRightLinear ? (
+                        <p>This is a Right Linear Grammar (Regular Grammar and Context-Free Grammar)</p>
+                      ) : grammarTestResults.isContextFree && grammarTestResults.isLeftLinear ? (
+                        <p>This is a Left Linear Grammar (Regular Grammar and Context-Free Grammar)</p>
+                      ) : grammarTestResults.isContextFree ? (
+                        <p>This is a Context-Free Grammar</p>
+                      ) : (
+                        <p>This grammar does not match standard grammar types</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </Modal>
             </div>
           )}
