@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import NavigationBar from "./NavigationBar";
+import Modal from './PopCard';
 import './Grammars.css';
 
 export class Production{
@@ -213,26 +214,70 @@ export class ConcreteGrammar extends Grammar {
   }
 }
 
-class ContextFreeGrammar extends Grammar {
-  isConverted() {
-    return false
+  function contextFreeCheck(grammar: ConcreteGrammar) {
+    let productions = grammar.getProductions()
+    for (let i = 0; i < productions.length; i++ ){
+        //LHS cannot be empty
+      if (!productions[i].lhs || productions[i].lhs.trim() === ""){
+        return false
+      }
+      // LHS must be a single variable for CFG
+      if (productions[i].lhs.length !== 1 || !/[A-Z]/.test(productions[i].lhs)) {
+        return false
+      }
+      //RHS has to contain something
+      if (productions[i].rhs === undefined || productions[i].rhs === null) {
+        return false
+      }
+    }
+    return true
   }
-  checkProduction(production: Production) {
-    //LHS cannot be empty
-    if (!production.lhs || production.lhs.trim() === ""){
-      throw new Error("LHS cannot be empty")
-    }
-    // LHS must be a single variable for CFG
-    if (production.lhs.length !== 1 || !/[A-Z]/.test(production.lhs)) {
-      throw new Error('LHS must be a single uppercase variable for CFG')
-    }
-    //RHS has to contain something
-    if (production.rhs === undefined || production.rhs === null) {
-      throw new Error('RHS cannot be null')
-    }
-  }
-}
 
+  function rightLinearCheck(grammar: ConcreteGrammar) {
+    let productions = grammar.getProductions()
+    for (let i = 0; i < productions.length; i++){
+      //LHS cannot be empty
+      if (!productions[i].lhs || productions[i].lhs.trim() === ""){
+        return false
+      }
+      // LHS must be a single variable for Right Linear Grammar
+      if (productions[i].lhs.length !== 1 || !/[A-Z]/.test(productions[i].lhs)) {
+        return false
+      }
+      // RHS cannot have only one non-terminal symbol
+      if (productions[i].rhs.length === 1 && /[A-Z]/.test(productions[i].rhs)){
+        return false
+      }
+      // RHS cannot have terminals or non-termianls following a non-terminal symbol for an Right-Linear Grammar
+      if (/[A-Z](?:[A-Za-z])+/.test(productions[i].rhs)){
+        return false
+      }
+    }
+    return true
+  }
+
+  function leftLinearCheck(grammar: ConcreteGrammar) {
+    let productions = grammar.getProductions()
+    for (let i = 0; i < productions.length; i++){
+      //LHS cannot be empty
+      if (!productions[i].lhs || productions[i].lhs.trim() === ""){
+        return false
+      }
+      // LHS must be a single variable for Right Linear Grammar
+      if (productions[i].lhs.length !== 1 || !/[A-Z]/.test(productions[i].lhs)) {
+        return false
+      }
+      // RHS cannot have only one non-terminal symbol
+      if (productions[i].rhs.length === 1 && /[A-Z]/.test(productions[i].rhs)){
+        return false
+      }
+      // RHS cannot have terminals or non-termianls following a non-terminal symbol for an Right-Linear Grammar
+      if (/(?:[A-Za-z])+[A-Z]/.test(productions[i].rhs)){
+        return false
+      }
+    }
+    return true
+  }
 
 function Grammars() {
   const [productions, setProductions] = useState([
@@ -246,6 +291,12 @@ function Grammars() {
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [openGrammarTest, setOpenCard] = useState<boolean>(false);
+  const [grammarTestResults, setGrammarTestResults] = useState<{
+  isContextFree: boolean;
+  isRightLinear: boolean;
+  isLeftLinear: boolean;
+} | null>(null);
   
   const lastFocusedInput = useRef<HTMLInputElement | null>(null);
 
@@ -471,6 +522,63 @@ function Grammars() {
               </div>
             </div>
           )}
+        </div>
+
+        <div className="menu-item">
+          <button 
+          className="menu-button" 
+          onClick={() => setOpenMenu(openMenu === 'test' ? null : 'test')}
+          >
+            Test
+          </button>
+          {openMenu === 'test' && (
+            <div className="dropdown-menu">
+              <div
+                className="menu-option"
+                onClick={() => {
+                    setOpenCard(true);
+                    const grammarWrapper = new ConcreteGrammar();
+                    productions.forEach(p => {
+                    const lhs = p.lhs.trim();
+                    const rhs = p.rhs.trim();
+                    if (lhs !== '' || rhs !== '') {
+                      grammarWrapper.addProduction(new Production(lhs, rhs));
+                    }
+                    });
+                    let isContextFree = contextFreeCheck(grammarWrapper);
+                    let isRightLinear = rightLinearCheck(grammarWrapper);
+                    let isLeftLinear = leftLinearCheck(grammarWrapper);
+                    setGrammarTestResults({
+                      isContextFree,
+                      isRightLinear,
+                      isLeftLinear
+                })
+                    
+                }}
+              >
+                Test for Grammar Type
+              </div> 
+              <Modal open={openGrammarTest} onClose={() => {setOpenCard(false)}} >
+                <div className="mt-4">
+                  <h2 className="text-xl font-bold mb-4">Grammar Test Results</h2>
+                  {grammarTestResults && (
+                    <div>
+                      {grammarTestResults.isContextFree && grammarTestResults.isRightLinear ? (
+                        <p>This is a Right Linear Grammar (Regular Grammar and Context-Free Grammar)</p>
+                      ) : grammarTestResults.isContextFree && grammarTestResults.isLeftLinear ? (
+                        <p>This is a Left Linear Grammar (Regular Grammar and Context-Free Grammar)</p>
+                      ) : grammarTestResults.isContextFree ? (
+                        <p>This is a Context-Free Grammar</p>
+                      ) : (
+                        <p>This grammar does not match standard grammar types</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </Modal>
+            </div>
+          )}
+
         </div>
 
         <div className="menu-item">
