@@ -4,17 +4,68 @@ import NavigationBar from "./NavigationBar";
 
 
 // Simple state interface
-interface State {
+export interface State {
   id: string;
   x: number;
   y: number;
 }
 
 // Transition interface
-interface Transition {
+export interface Transition {
   from: string;
   to: string;
   label: string;
+}
+
+export class Automaton {
+  states: State[];
+  transitions: Transition[];
+  private nextId: number;
+
+  constructor(states: State[] = [], transitions: Transition[] = [], nextId: number = 0) {
+    this.states = states;
+    this.transitions = transitions;
+    this.nextId = nextId;
+  }
+
+  /**
+   * Adds a new state at the given coordinates
+   */
+  addState(x: number, y: number) {
+    this.states = [...this.states, { id: `q${this.nextId}`, x, y }];
+    this.nextId++;
+  }
+
+  /**
+   * Adds a transition between two states
+   */
+  addTransition(from: string, to: string, label: string) {
+    this.transitions = [...this.transitions, { from, to, label }];
+  }
+
+  /**
+   * Finds a state at the given coordinates
+   */
+  getStateAt(x: number, y: number): State | null {
+    return this.states.find((s) => {
+      const dist = Math.sqrt((s.x - x) ** 2 + (s.y - y) ** 2);
+      return dist <= 30;
+    }) || null;
+  }
+
+  /**
+   * Helper to generate a unique key for transitions
+   */
+  getTransitionKey(from: string, to: string): string {
+    return `${from}->${to}`;
+  }
+
+  /**
+   * Creates a deep copy of the automaton
+   */
+  clone(): Automaton {
+    return new Automaton(this.states, this.transitions, this.nextId);
+  }
 }
 
 function Automata() {
@@ -22,9 +73,8 @@ function Automata() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   // Automaton data
-  const [states, setStates] = useState<State[]>([]);
-  const [stateCount, setStateCount] = useState(0);
-  const [transitions, setTransitions] = useState<Transition[]>([]);
+  const [automaton, setAutomaton] = useState(new Automaton());
+  const { states, transitions } = automaton;
 
   // Track which tool is selected
   const [selectedTool, setSelectedTool] = useState<string>("");
@@ -47,14 +97,6 @@ function Automata() {
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
-
-  // Helper to find state at position
-  const getStateAt = (x: number, y: number): State | null => {
-    return states.find((s) => {
-      const dist = Math.sqrt((s.x - x) ** 2 + (s.y - y) ** 2);
-      return dist <= 30;
-    }) || null;
-  };
 
   // Draw everything on canvas
   useEffect(() => {
@@ -184,11 +226,11 @@ function Automata() {
     const y = e.clientY - rect.top;
 
     if (selectedTool === "state") {
-      const newState: State = { id: `q${stateCount}`, x, y };
-      setStates([...states, newState]);
-      setStateCount(stateCount + 1);
+      const newAutomaton = automaton.clone();
+      newAutomaton.addState(x, y);
+      setAutomaton(newAutomaton);
     } else if (selectedTool === "transition") {
-      const state = getStateAt(x, y);
+      const state = automaton.getStateAt(x, y);
       if (state) {
         setDragFrom(state.id);
         setDragTo({ x, y });
@@ -216,17 +258,14 @@ function Automata() {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const toState = getStateAt(x, y);
+    const toState = automaton.getStateAt(x, y);
 
     if (toState) {
       const label = prompt("Enter transition label:");
       if (label !== null) {
-        const newTransition: Transition = {
-          from: dragFrom,
-          to: toState.id,
-          label: label || "ε",
-        };
-        setTransitions([...transitions, newTransition]);
+        const newAutomaton = automaton.clone();
+        newAutomaton.addTransition(dragFrom, toState.id, label || "ε");
+        setAutomaton(newAutomaton);
       }
     }
 
