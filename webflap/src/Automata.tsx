@@ -28,24 +28,19 @@ export class Automaton {
     this.nextId = nextId;
   }
 
-  /**
-   * Adds a new state at the given coordinates
-   */
+
+   //Adds a new state at the given coordinates
   addState(x: number, y: number) {
     this.states = [...this.states, { id: `q${this.nextId}`, x, y }];
     this.nextId++;
   }
 
-  /**
-   * Adds a transition between two states
-   */
+  //Adds a transition between two states
   addTransition(from: string, to: string, label: string) {
     this.transitions = [...this.transitions, { from, to, label }];
   }
 
-  /**
-   * Finds a state at the given coordinates
-   */
+  //Finds a state at the given coordinates
   getStateAt(x: number, y: number): State | null {
     return this.states.find((s) => {
       const dist = Math.sqrt((s.x - x) ** 2 + (s.y - y) ** 2);
@@ -53,16 +48,12 @@ export class Automaton {
     }) || null;
   }
 
-  /**
-   * Helper to generate a unique key for transitions
-   */
+  //Helper to generate a unique key for transitions
   getTransitionKey(from: string, to: string): string {
     return `${from}->${to}`;
   }
 
-  /**
-   * Creates a deep copy of the automaton
-   */
+  //Creates a deep copy of the automaton
   clone(): Automaton {
     return new Automaton(this.states, this.transitions, this.nextId);
   }
