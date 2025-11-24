@@ -57,6 +57,15 @@ export class Automaton {
   clone(): Automaton {
     return new Automaton(this.states, this.transitions, this.nextId);
   }
+
+  //Returns a string representation of the automaton
+  toString(): string {
+    const stateIds = this.states.map(s => s.id).join(', ');
+    const transitionStrings = this.transitions.map(t => 
+      `${t.from} --${t.label}--> ${t.to}`
+    ).join('\n');
+    return `States: ${stateIds}\nTransitions:\n${transitionStrings || '(none)'}`;
+  }
 }
 
 // Helper class for transition operations
