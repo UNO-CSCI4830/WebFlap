@@ -215,24 +215,7 @@ export class ConcreteGrammar extends Grammar {
   }
 }
 
-  function contextFreeCheck(grammar: ConcreteGrammar) {
-    let productions = grammar.getProductions()
-    for (let i = 0; i < productions.length; i++ ){
-        //LHS cannot be empty
-      if (!productions[i].lhs || productions[i].lhs.trim() === ""){
-        return false
-      }
-      // LHS must be a single variable for CFG
-      if (productions[i].lhs.length !== 1 || !/[A-Z]/.test(productions[i].lhs)) {
-        return false
-      }
-      //RHS has to contain something
-      if (productions[i].rhs === undefined || productions[i].rhs === null) {
-        return false
-      }
-    }
-    return true
-  }
+  
 
   function rightLinearCheck(grammar: ConcreteGrammar) {
     let productions = grammar.getProductions()
@@ -547,11 +530,10 @@ function Grammars() {
                       grammarWrapper.addProduction(new Production(lhs, rhs));
                     }
                     });
-                    let isContextFree = contextFreeCheck(grammarWrapper);
+                    let isContextFree = contextFreeGrammar.isContextFree(grammarWrapper);
                     let isRightLinear = rightLinearCheck(grammarWrapper);
                     let isLeftLinear = leftLinearCheck(grammarWrapper);
                     let isChomskyNormalForm = ChomskyNormalFormGrammar.isChomskyNormalForm(grammarWrapper);
-                    console.log(isChomskyNormalForm)
                     setGrammarTestResults({
                       isContextFree,
                       isRightLinear,
@@ -771,37 +753,68 @@ function Grammars() {
 export default Grammars;
 export abstract class ChomskyNormalFormGrammar extends Grammar {
   static isChomskyNormalForm(grammar: Grammar): boolean {
-    console.log("test")
     // Check if all productions are in Chomsky Normal Form
     for (let production of grammar.getProductions()) {
       const rhs = production.rhs || '';
       const rhsLength = this.getLength(rhs);
       if (rhsLength === 1) {
          if (this.checkLength1(rhs) === false) {
-          console.log("Production failed length 1 check:", production.toString());
           return false;
         }
       } else if (rhsLength === 2) {
         if (this.checkLength2(rhs[0], rhs[1]) === false) {
-          console.log("Production failed length 2 check:", production.toString());
           return false;
         }
       } else {
-        console.log("Production failed length check:", production.toString());
         return false;
       }
     }
-    console.log("All productions are in Chomsky Normal Form");
     return true;
   }
+  //get length of rhs
   static getLength(rhs: string): number {
     return rhs.length;
   }
+  //if length is 1, check if it is a terminal
   static checkLength1(symbol: string): boolean {
     return /[a-z0-9]/.test(symbol);
   }
+  //if length is 2, check both are variables
   static checkLength2(symbol1: string, symbol2: string): boolean {
     return /[A-Z]/.test(symbol1) && /[A-Z]/.test(symbol2);
   }
 
 }
+export abstract class contextFreeGrammar extends Grammar {
+  static isContextFree(grammar: Grammar): boolean {
+    let productions = grammar.getProductions()
+    for (let i = 0; i < productions.length; i++){
+      //LHS cannot be empty
+      if (!this.LHSNotEmpty(productions[i])){
+        return false
+      }
+      // LHS must be a single variable for Context-Free Grammar
+      if (!this.SingleLHSVariable(productions[i])){
+        return false
+      }
+      // RHS cannot be empty
+      if (!this.RHSNotEmpty(productions[i])){
+        return false
+      }
+    }
+    return true
+  }
+  //checks for empty LHS
+  static LHSNotEmpty(production: Production): boolean {
+    return production.lhs.trim() !== "";
+  }
+  //checks for single variable in LHS
+  static SingleLHSVariable(production: Production): boolean {
+    return production.lhs.length === 1 && /[A-Z]/.test(production.lhs);
+  }
+  //checks for empty RHS
+  static RHSNotEmpty(production: Production): boolean {
+    return production.rhs.trim() !== "";
+  }
+}
+
