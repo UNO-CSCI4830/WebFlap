@@ -63,6 +63,7 @@ export class Production{
 
 }
 
+
 export abstract class Grammar{
 
   variables: Set<string>
@@ -296,6 +297,7 @@ function Grammars() {
   isContextFree: boolean;
   isRightLinear: boolean;
   isLeftLinear: boolean;
+  isChomskyNormalForm: boolean;
 } | null>(null);
   
   const lastFocusedInput = useRef<HTMLInputElement | null>(null);
@@ -548,10 +550,13 @@ function Grammars() {
                     let isContextFree = contextFreeCheck(grammarWrapper);
                     let isRightLinear = rightLinearCheck(grammarWrapper);
                     let isLeftLinear = leftLinearCheck(grammarWrapper);
+                    let isChomskyNormalForm = ChomskyNormalFormGrammar.isChomskyNormalForm(grammarWrapper);
+                    console.log(isChomskyNormalForm)
                     setGrammarTestResults({
                       isContextFree,
                       isRightLinear,
-                      isLeftLinear
+                      isLeftLinear,
+                      isChomskyNormalForm
                 })
                     
                 }}
@@ -563,7 +568,12 @@ function Grammars() {
                   <h2 className="text-xl font-bold mb-4">Grammar Test Results</h2>
                   {grammarTestResults && (
                     <div>
-                      {grammarTestResults.isContextFree && grammarTestResults.isRightLinear ? (
+                
+                      {
+                        grammarTestResults.isChomskyNormalForm ? (
+                          <p>This is a Chomsky Normal Form Grammar (Context-Free Grammar)</p>
+                        ) :
+                          grammarTestResults.isContextFree && grammarTestResults.isRightLinear ? (
                         <p>This is a Right Linear Grammar (Regular Grammar and Context-Free Grammar)</p>
                       ) : grammarTestResults.isContextFree && grammarTestResults.isLeftLinear ? (
                         <p>This is a Left Linear Grammar (Regular Grammar and Context-Free Grammar)</p>
@@ -758,6 +768,40 @@ function Grammars() {
     </div>
   );
 }
-
 export default Grammars;
+export abstract class ChomskyNormalFormGrammar extends Grammar {
+  static isChomskyNormalForm(grammar: Grammar): boolean {
+    console.log("test")
+    // Check if all productions are in Chomsky Normal Form
+    for (let production of grammar.getProductions()) {
+      const rhs = production.rhs || '';
+      const rhsLength = this.getLength(rhs);
+      if (rhsLength === 1) {
+         if (this.checkLength1(rhs) === false) {
+          console.log("Production failed length 1 check:", production.toString());
+          return false;
+        }
+      } else if (rhsLength === 2) {
+        if (this.checkLength2(rhs[0], rhs[1]) === false) {
+          console.log("Production failed length 2 check:", production.toString());
+          return false;
+        }
+      } else {
+        console.log("Production failed length check:", production.toString());
+        return false;
+      }
+    }
+    console.log("All productions are in Chomsky Normal Form");
+    return true;
+  }
+  static getLength(rhs: string): number {
+    return rhs.length;
+  }
+  static checkLength1(symbol: string): boolean {
+    return /[a-z0-9]/.test(symbol);
+  }
+  static checkLength2(symbol1: string, symbol2: string): boolean {
+    return /[A-Z]/.test(symbol1) && /[A-Z]/.test(symbol2);
+  }
 
+}
