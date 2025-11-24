@@ -59,6 +59,38 @@ export class Automaton {
   }
 }
 
+// Helper class for transition operations
+export class TransitionHelper {
+  // Groups transitions by their from->to pair
+  groupTransitions(transitions: Transition[]): Map<string, string[]> {
+    const grouped = new Map<string, string[]>();
+    transitions.forEach((t) => {
+      const key = `${t.from}->${t.to}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(t.label);
+    });
+    return grouped;
+  }
+
+  // Finds a state by its ID
+  findStateById(states: State[], id: string): State | null {
+    return states.find((s) => s.id === id) || null;
+  }
+
+  // Parses a transition key into from and to IDs
+  parseTransitionKey(key: string): { from: string; to: string } {
+    const [from, to] = key.split('->');
+    return { from, to };
+  }
+
+  // Checks if a transition is a self-loop
+  isSelfLoop(fromId: string, toId: string): boolean {
+    return fromId === toId;
+  }
+}
+
 function Automata() {
   // Track which menu is open
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -100,23 +132,17 @@ function Automata() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Group transitions by from-to pair
-    const groupedTransitions = new Map<string, string[]>();
-    transitions.forEach((t) => {
-      const key = `${t.from}->${t.to}`;
-      if (!groupedTransitions.has(key)) {
-        groupedTransitions.set(key, []);
-      }
-      groupedTransitions.get(key)!.push(t.label);
-    });
+    const helper = new TransitionHelper();
+    const groupedTransitions = helper.groupTransitions(transitions);
 
     // Draw transitions
     groupedTransitions.forEach((labels, key) => {
-      const [fromId, toId] = key.split('->');
-      const from = states.find((s) => s.id === fromId);
-      const to = states.find((s) => s.id === toId);
+      const { from: fromId, to: toId } = helper.parseTransitionKey(key);
+      const from = helper.findStateById(states, fromId);
+      const to = helper.findStateById(states, toId);
       if (!from || !to) return;
 
-      if (from.id === to.id) {
+      if (helper.isSelfLoop(fromId, toId)) {
         // Self-loop
         ctx.beginPath();
         ctx.arc(from.x, from.y - 45, 20, 0, Math.PI * 2);
@@ -176,7 +202,7 @@ function Automata() {
 
     // Draw drag preview
     if (dragFrom && dragTo) {
-      const from = states.find((s) => s.id === dragFrom);
+      const from = helper.findStateById(states, dragFrom);
       if (from) {
         ctx.beginPath();
         ctx.moveTo(from.x, from.y);
