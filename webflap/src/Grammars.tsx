@@ -213,6 +213,122 @@ export class ConcreteGrammar extends Grammar {
       throw new Error('RHS cannot be null');
     }
   }
+
+  findDuplicateProductions(): Production[][] {
+    const duplicates: Production[][] = [];
+    const seen: Production[] = [];
+
+    for (const production of this.productions) {
+      const duplicate = seen.find(p => p.equal(production));
+      if (duplicate) {
+        duplicates.push([duplicate, production]);
+      } else {
+        seen.push(production);
+      }
+    }
+
+    return duplicates;
+  }
+
+  isVariableReachable(variable: string): boolean {
+    if (!this.startVariable) {
+      return false;
+    }
+
+    const reachable = new Set<string>();
+    const toProcess: string[] = [this.startVariable];
+
+    while (toProcess.length > 0) {
+      const current = toProcess.pop()!;
+
+      if (reachable.has(current)) {
+        continue;
+      }
+
+      reachable.add(current);
+
+      // Get all productions with current variable as LHS
+      const productions = this.getProductionsFor(current);
+
+      for (const production of productions) {
+        // Extract all variables from the RHS
+        const variables = production.getVariables();
+        for (const v of variables) {
+          if (!reachable.has(v)) {
+            toProcess.push(v);
+          }
+        }
+      }
+    }
+
+    return reachable.has(variable);
+  }
+
+  getReachableVariables(): string[] {
+    if (!this.startVariable) {
+      return [];
+    }
+
+    const reachable = new Set<string>();
+    const toProcess: string[] = [this.startVariable];
+
+    while (toProcess.length > 0) {
+      const current = toProcess.pop()!;
+
+      if (reachable.has(current)) {
+        continue;
+      }
+
+      reachable.add(current);
+
+      // Get all productions with current variable as LHS
+      const productions = this.getProductionsFor(current);
+
+      for (const production of productions) {
+        // Extract all variables from the RHS
+        const variables = production.getVariables();
+        for (const v of variables) {
+          if (!reachable.has(v)) {
+            toProcess.push(v);
+          }
+        }
+      }
+    }
+
+    return Array.from(reachable);
+  }
+
+  /**
+   * Gets all unreachable variables in the grammar.
+   * These are variables that cannot be derived from the start symbol.
+   */
+  getUnreachableVariables(): string[] {
+    const reachable = new Set(this.getReachableVariables());
+    return this.getVariables().filter(v => !reachable.has(v));
+  }
+
+  /**
+   * Determines if a production is reachable.
+   * A production is reachable if its LHS variable is reachable.
+   */
+  isProductionReachable(production: Production): boolean {
+    return this.isVariableReachable(production.lhs);
+  }
+
+  /**
+   * Gets all reachable productions in the grammar.
+   */
+  getReachableProductions(): Production[] {
+    return this.productions.filter(p => this.isProductionReachable(p));
+  }
+
+  /**
+   * Gets all unreachable productions in the grammar.
+   */
+  getUnreachableProductions(): Production[] {
+    return this.productions.filter(p => !this.isProductionReachable(p));
+  }
+
 }
 
   
