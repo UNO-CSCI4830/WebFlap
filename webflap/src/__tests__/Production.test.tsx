@@ -30,7 +30,7 @@ describe('Production class - getVariables()', () => {
         expect(variables).toEqual(['S', 'A', 'W', 'X', 'Y', 'Z']);
     });
 
-    test('should return an empty array if there are no variables in produciton', () => {
+    test('should return an empty array if there are no variables in production', () => {
         const production = new Production('s', 'xyz123');
         const variables = production.getVariables();
         expect(variables).toEqual([]);
@@ -41,26 +41,26 @@ describe('Production class - getVariables()', () => {
 describe('Production class - getTerminals()', () => {
     test('should return all terminals in production with variables and terminals', () => {
         const production = new Production('S', 'aABc123');
-        const variables = production.getTerminals();
-        expect(variables).toEqual(['a', 'c', '1', '2', '3']);
+        const terminals = production.getTerminals();
+        expect(terminals).toEqual(['a', 'c', '1', '2', '3']);
     });
     
     test('should handle productions with only terminals on RHS', () => {
         const production = new Production('SA', 'wxyz');
-        const variables = production.getTerminals();
-        expect(variables).toEqual(['w', 'x', 'y', 'z']);
+        const terminals = production.getTerminals();
+        expect(terminals).toEqual(['w', 'x', 'y', 'z']);
     });
 
     test('should handle productions with duplicate terminals', () => {
         const production = new Production('SA', 'wxyzwxyz');
-        const variables = production.getTerminals();
-        expect(variables).toEqual(['w', 'x', 'y', 'z']);
+        const terminals = production.getTerminals();
+        expect(terminals).toEqual(['w', 'x', 'y', 'z']);
     });
 
-    test('should return an empty array if there are no terminals in produciton', () => {
+    test('should return an empty array if there are no terminals in production', () => {
         const production = new Production('SA', 'WXYZ');
-        const variables = production.getTerminals();
-        expect(variables).toEqual([]);
+        const terminals = production.getTerminals();
+        expect(terminals).toEqual([]);
     });
 });
 
