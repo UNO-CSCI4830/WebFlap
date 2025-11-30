@@ -112,9 +112,34 @@ function Automata() {
   // Track which menu is open
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-  // Automaton data
+  // Automaton data with undo/redo history
   const [automaton, setAutomaton] = useState(new Automaton());
+  const [history, setHistory] = useState<Automaton[]>([new Automaton()]);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const { states, transitions } = automaton;
+
+  // Update automaton and push to history
+  const updateAutomaton = (newAutomaton: Automaton) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newAutomaton);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    setAutomaton(newAutomaton);
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      setAutomaton(history[historyIndex - 1]);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setAutomaton(history[historyIndex + 1]);
+    }
+  };
 
   // Track which tool is selected
   const [selectedTool, setSelectedTool] = useState<string>("");
@@ -262,7 +287,7 @@ function Automata() {
     if (selectedTool === "state") {
       const newAutomaton = automaton.clone();
       newAutomaton.addState(x, y);
-      setAutomaton(newAutomaton);
+      updateAutomaton(newAutomaton);
     } else if (selectedTool === "transition") {
       const state = automaton.getStateAt(x, y);
       if (state) {
@@ -274,7 +299,7 @@ function Automata() {
       if (state) {
         const newAutomaton = automaton.clone();
         newAutomaton.deleteState(state.id);
-        setAutomaton(newAutomaton);
+        updateAutomaton(newAutomaton);
       }
     }
   };
@@ -306,7 +331,7 @@ function Automata() {
       if (label !== null) {
         const newAutomaton = automaton.clone();
         newAutomaton.addTransition(dragFrom, toState.id, label || "ε");
-        setAutomaton(newAutomaton);
+        updateAutomaton(newAutomaton);
       }
     }
 
@@ -471,10 +496,10 @@ function Automata() {
           >
             ☠
           </button>
-          <button className="tool-button" title="Undo">
+          <button className="tool-button" title="Undo" onClick={undo}>
             ↶
           </button>
-          <button className="tool-button" title="Redo">
+          <button className="tool-button" title="Redo" onClick={redo}>
             ↷
           </button>
         </div>
