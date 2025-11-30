@@ -148,6 +148,9 @@ function Automata() {
   const [dragFrom, setDragFrom] = useState<string | null>(null);
   const [dragTo, setDragTo] = useState<{ x: number; y: number } | null>(null);
 
+  // State dragging (for select tool)
+  const [draggingState, setDraggingState] = useState<string | null>(null);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Close menus when clicking outside
@@ -301,21 +304,41 @@ function Automata() {
         newAutomaton.deleteState(state.id);
         updateAutomaton(newAutomaton);
       }
+    } else if (selectedTool === "select") {
+      const state = automaton.getStateAt(x, y);
+      if (state) {
+        setDraggingState(state.id);
+      }
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!dragFrom) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    setDragTo({ x, y });
+
+    if (dragFrom) {
+      setDragTo({ x, y });
+    } else if (draggingState) {
+      // Move state position directly (no history until mouse up)
+      automaton.states = automaton.states.map((s) =>
+        s.id === draggingState ? { ...s, x, y } : s
+      );
+      setAutomaton(automaton.clone());
+    }
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Finish state dragging and save to history
+    if (draggingState) {
+      updateAutomaton(automaton.clone());
+      setDraggingState(null);
+      return;
+    }
+
     if (!dragFrom) return;
 
     const canvas = canvasRef.current;
