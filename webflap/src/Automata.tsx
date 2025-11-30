@@ -40,6 +40,14 @@ export class Automaton {
     this.transitions = [...this.transitions, { from, to, label }];
   }
 
+  //Deletes a state and all its connected transitions
+  deleteState(stateId: string) {
+    this.states = this.states.filter((s) => s.id !== stateId);
+    this.transitions = this.transitions.filter(
+      (t) => t.from !== stateId && t.to !== stateId
+    );
+  }
+
   //Finds a state at the given coordinates
   getStateAt(x: number, y: number): State | null {
     return this.states.find((s) => {
@@ -260,6 +268,13 @@ function Automata() {
       if (state) {
         setDragFrom(state.id);
         setDragTo({ x, y });
+      }
+    } else if (selectedTool === "delete") {
+      const state = automaton.getStateAt(x, y);
+      if (state) {
+        const newAutomaton = automaton.clone();
+        newAutomaton.deleteState(state.id);
+        setAutomaton(newAutomaton);
       }
     }
   };
