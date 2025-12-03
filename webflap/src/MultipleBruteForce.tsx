@@ -118,7 +118,7 @@ function MultipleBruteForceParse(){
 
     return(
         <div className="jflap-container">
-      <div className="jflap-title-bar">WebFlap: Brute Force Parse</div>
+      <div className="jflap-title-bar">WebFlap: Multiple Brute Force Parse</div>
 
       <div style={{ padding: 20, display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 900 }}>

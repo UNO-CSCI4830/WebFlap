@@ -576,18 +576,29 @@ function Grammars() {
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `input:Multiple Brute Force Parse`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
+                  try{
+                    const grammarWrapper = new ConcreteGrammar();
+                    productions.forEach(p => {
+                    const lhs = p.lhs.trim();
+                    const rhs = p.rhs.trim();
+                    if (lhs !== '' || rhs !== '') {
+                      grammarWrapper.addProduction(new Production(lhs, rhs));
+                    }
+                    });
+                    grammarWrapper.setStartVariable(productions.find(p => p.lhs.trim() !== '')?.lhs.trim() || 'S');
+
+                    localStorage.setItem('webflap:bruteForceGrammar', JSON.stringify(grammarWrapper.toJSON()));
+                    
+                  }
+                  catch (err) {
+                    console.error('Failed to save grammar to localStorage', err);
+                  }
+                  // open new tab at route /bruteforce
+                  const w = window.open('/mulitplebruthforce', '_blank');
+                  if (w) w.focus();
                 }}
               >
                 Multiple Brute Force Parse
-                {openSubmenu === `input:Multiple Brute Force Parse` && (
-                  <div className="submenu">
-                    <div className="menu-option">Start Batch</div>
-                    <div className="menu-option">Load Inputs...</div>
-                    <div className="menu-option">Cancel</div>
-                  </div>
-                )}
               </div>
 
               <div
