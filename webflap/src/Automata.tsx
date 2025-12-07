@@ -40,6 +40,14 @@ export class Automaton {
     this.transitions = [...this.transitions, { from, to, label }];
   }
 
+  //Deletes a state and all its connected transitions
+  deleteState(stateId: string) {
+    this.states = this.states.filter((s) => s.id !== stateId);
+    this.transitions = this.transitions.filter(
+      (t) => t.from !== stateId && t.to !== stateId
+    );
+  }
+
   //Finds a state at the given coordinates
   getStateAt(x: number, y: number): State | null {
     return this.states.find((s) => {
@@ -104,9 +112,34 @@ function Automata() {
   // Track which menu is open
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-  // Automaton data
+  // Automaton data with undo/redo history
   const [automaton, setAutomaton] = useState(new Automaton());
+  const [history, setHistory] = useState<Automaton[]>([new Automaton()]);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const { states, transitions } = automaton;
+
+  // Update automaton and push to history
+  const updateAutomaton = (newAutomaton: Automaton) => {
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newAutomaton);
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+    setAutomaton(newAutomaton);
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      setAutomaton(history[historyIndex - 1]);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      setAutomaton(history[historyIndex + 1]);
+    }
+  };
 
   // Track which tool is selected
   const [selectedTool, setSelectedTool] = useState<string>("");
@@ -114,6 +147,9 @@ function Automata() {
   // Transition dragging
   const [dragFrom, setDragFrom] = useState<string | null>(null);
   const [dragTo, setDragTo] = useState<{ x: number; y: number } | null>(null);
+
+  // State dragging (for select tool)
+  const [draggingState, setDraggingState] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -254,28 +290,55 @@ function Automata() {
     if (selectedTool === "state") {
       const newAutomaton = automaton.clone();
       newAutomaton.addState(x, y);
-      setAutomaton(newAutomaton);
+      updateAutomaton(newAutomaton);
     } else if (selectedTool === "transition") {
       const state = automaton.getStateAt(x, y);
       if (state) {
         setDragFrom(state.id);
         setDragTo({ x, y });
       }
+    } else if (selectedTool === "delete") {
+      const state = automaton.getStateAt(x, y);
+      if (state) {
+        const newAutomaton = automaton.clone();
+        newAutomaton.deleteState(state.id);
+        updateAutomaton(newAutomaton);
+      }
+    } else if (selectedTool === "select") {
+      const state = automaton.getStateAt(x, y);
+      if (state) {
+        setDraggingState(state.id);
+      }
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!dragFrom) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    setDragTo({ x, y });
+
+    if (dragFrom) {
+      setDragTo({ x, y });
+    } else if (draggingState) {
+      // Move state position directly (no history until mouse up)
+      automaton.states = automaton.states.map((s) =>
+        s.id === draggingState ? { ...s, x, y } : s
+      );
+      setAutomaton(automaton.clone());
+    }
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Finish state dragging and save to history
+    if (draggingState) {
+      updateAutomaton(automaton.clone());
+      setDraggingState(null);
+      return;
+    }
+
     if (!dragFrom) return;
 
     const canvas = canvasRef.current;
@@ -291,7 +354,7 @@ function Automata() {
       if (label !== null) {
         const newAutomaton = automaton.clone();
         newAutomaton.addTransition(dragFrom, toState.id, label || "ε");
-        setAutomaton(newAutomaton);
+        updateAutomaton(newAutomaton);
       }
     }
 
@@ -456,10 +519,10 @@ function Automata() {
           >
             ☠
           </button>
-          <button className="tool-button" title="Undo">
+          <button className="tool-button" title="Undo" onClick={undo}>
             ↶
           </button>
-          <button className="tool-button" title="Redo">
+          <button className="tool-button" title="Redo" onClick={redo}>
             ↷
           </button>
         </div>
