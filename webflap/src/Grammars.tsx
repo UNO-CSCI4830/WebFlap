@@ -594,7 +594,7 @@ function Grammars() {
                     console.error('Failed to save grammar to localStorage', err);
                   }
                   // open new tab at route /bruteforce
-                  const w = window.open('/mulitplebruthforce', '_blank');
+                  const w = window.open('/multiplebruteforce', '_blank');
                   if (w) w.focus();
                 }}
               >

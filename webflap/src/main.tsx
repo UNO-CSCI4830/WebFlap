@@ -18,7 +18,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/" element={<Home />} />
         <Route path="/grammars" element={<Grammars />} />
         <Route path="/bruteforce" element={<BruteForceParse />} />
-        <Route path="/mulitplebruthforce" element={<MultipleBruteForceParse />} />
+        <Route path="/multiplebruteforce" element={<MultipleBruteForceParse />} />
         <Route path="/automata" element={<Automata />} />
         <Route path="/new" element={<ProjectSelection />} />
         <Route path="/features" element={<Features />} />
