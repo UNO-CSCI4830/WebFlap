@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import "./Automata.css";
 import NavigationBar from "./NavigationBar";
+import { useNavigate } from 'react-router-dom';
 
 let allPlacedTransitions: {from: string, to: string, label: string}[] = [];
 // Simple state interface
@@ -139,6 +140,7 @@ export class TransitionHelper {
 }
 
 function Automata() {
+  const navigate = useNavigate();
   // Track which menu is open
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
@@ -564,71 +566,48 @@ function Automata() {
             className="menu-button"
             onClick={() => setOpenMenu(openMenu === "test" ? null : "test")}
           >
-            Test
+            Test for Nondeterminism
           </button>
           {openMenu === "test" && (
             <div className="dropdown-menu">
-              <div className="menu-option">Compare Equivalence</div>
-              <div className="menu-option">Highlight Nondeterminism</div>
-              <div className="menu-option">Highlight λ-Transitions</div>
+              <div className="menu-option"
+              onClick={() => {
+                let isNonDeterministic = false;
+                for (const i of allPlacedTransitions) {
+                  const matchingTransitions = automaton.transitions.filter(t =>
+                    t.from === i.from &&  t.label === i.label
+                  );
+                  if (matchingTransitions.length > 1) {
+                    isNonDeterministic = true;
+                    break;
+                  }
+                  if (i.label === 'ε') {
+                    isNonDeterministic = true;
+                    break;
+                  }
+                }
+                if (isNonDeterministic) {
+                  alert("The automaton is Non-Deterministic.");
+                } else {
+                  alert("The automaton is Deterministic.");
+                }
+
+              }
+              }
+              >Check for Non-Determinism</div>
             </div>
           )}
         </div>
-
         <div className="menu-item">
           <button
             className="menu-button"
-            onClick={() => setOpenMenu(openMenu === "view" ? null : "view")}
-          >
-            View
-          </button>
-          {openMenu === "view" && (
-            <div className="dropdown-menu">
-              <div className="menu-option">Save Current Graph Layout</div>
-              <div className="menu-option">Restore Saved Graph Layout</div>
-              <div className="menu-option">Move Vertices</div>
-              <div className="menu-option">Apply A Random Layout Algorithm</div>
-              <div className="menu-option">
-                Apply A Specific Layout Algorithm
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="menu-item">
-          <button
-            className="menu-button"
-            onClick={() =>
-              setOpenMenu(openMenu === "convert" ? null : "convert")
+            
+            onClick={() => 
+              navigate('/Tutorials')
             }
-          >
-            Convert
-          </button>
-          {openMenu === "convert" && (
-            <div className="dropdown-menu">
-              <div className="menu-option">Convert to DFA</div>
-              <div className="menu-option">Minimize DFA</div>
-              <div className="menu-option">Convert to Grammar</div>
-              <div className="menu-option">Convert FA to RE</div>
-              <div className="menu-option">Combine Automata</div>
-              <div className="menu-option">Add Trap State to DFA</div>
-            </div>
-          )}
-        </div>
-
-        <div className="menu-item">
-          <button
-            className="menu-button"
-            onClick={() => setOpenMenu(openMenu === "help" ? null : "help")}
           >
             Help
           </button>
-          {openMenu === "help" && (
-            <div className="dropdown-menu">
-              <div className="menu-option">Help...</div>
-              <div className="menu-option">About...</div>
-            </div>
-          )}
         </div>
       </div>
 
