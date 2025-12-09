@@ -407,6 +407,12 @@ function Automata() {
         updateAutomaton(newAutomaton);
       }
     }
+    else if (selectedTool === "comment") {
+      const text = prompt("Enter comment:");
+      if (text) {
+        setComments([...comments, { id: `c${commentIdRef.current++}`, x, y, text }]);
+      }
+    }
     else if (selectedTool === "final"){
       const state = automaton.getStateAt(x, y);
       if (state) {
