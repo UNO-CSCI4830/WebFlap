@@ -2,12 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import "./Automata.css";
 import NavigationBar from "./NavigationBar";
 
-
+let allPlacedTransitions: {from: string, to: string, label: string}[] = [];
 // Simple state interface
 export interface State {
   id: string;
   x: number;
   y: number;
+  initial?: boolean;
+  final?: boolean;
 }
 
 // Transition interface
@@ -15,6 +17,14 @@ export interface Transition {
   from: string;
   to: string;
   label: string;
+}
+
+// Comment interface - text annotations on the canvas
+export interface Comment {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
 }
 
 export class Automaton {
@@ -30,20 +40,40 @@ export class Automaton {
 
 
    //Adds a new state at the given coordinates
-  addState(x: number, y: number) {
-    this.states = [...this.states, { id: `q${this.nextId}`, x, y }];
+  addState(x: number, y: number, initial: boolean = false) {
+    this.states = [...this.states, { id: `q${this.nextId}`, x, y, initial }];
     this.nextId++;
+  }
+
+  //Marks a state as initial (and unmarks all others)
+  setInitialState(stateId: string) {
+    this.states = this.states.map(s => ({
+      ...s,
+      initial: s.id === stateId
+    }));
+  }
+
+  //Toggles a state as final
+  setFinalState(stateId: string) {
+    this.states = this.states.map(s => 
+      s.id === stateId ? { ...s, final: !s.final } : s
+    );
   }
 
   //Adds a transition between two states
   addTransition(from: string, to: string, label: string) {
     this.transitions = [...this.transitions, { from, to, label }];
+    allPlacedTransitions.push({ from, to, label });
   }
 
   //Deletes a state and all its connected transitions
   deleteState(stateId: string) {
     this.states = this.states.filter((s) => s.id !== stateId);
     this.transitions = this.transitions.filter(
+      (t) => t.from !== stateId && t.to !== stateId
+    );
+    // Remove transitions from allPlacedTransitions
+    allPlacedTransitions = allPlacedTransitions.filter(
       (t) => t.from !== stateId && t.to !== stateId
     );
   }
@@ -143,6 +173,7 @@ function Automata() {
 
   // Track which tool is selected
   const [selectedTool, setSelectedTool] = useState<string>("");
+  const [toolbarCollapsed, setToolbarCollapsed] = useState(false);
 
   // Transition dragging
   const [dragFrom, setDragFrom] = useState<string | null>(null);
@@ -151,7 +182,17 @@ function Automata() {
   // State dragging (for select tool)
   const [draggingState, setDraggingState] = useState<string | null>(null);
 
+  // Comments on canvas
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [draggingComment, setDraggingComment] = useState<string | null>(null);
+  const commentIdRef = useRef(0);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Helper to find comment at position
+  const getCommentAt = (x: number, y: number): Comment | null => {
+    return comments.find((c) => Math.abs(c.x - x) < 50 && Math.abs(c.y - y) < 15) || null;
+  };
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -262,6 +303,29 @@ function Automata() {
 
     // Draw states
     states.forEach((state) => {
+      // Draw initial state triangle indicator
+      if (state.initial) {
+        ctx.beginPath();
+        ctx.fillStyle = "#2563eb";
+        // Triangle pointing from left into the state
+        const triangleSize = 15;
+        const triangleX = state.x - 50;
+        const triangleY = state.y;
+        ctx.moveTo(triangleX - triangleSize, triangleY - triangleSize);
+        ctx.lineTo(triangleX - triangleSize, triangleY + triangleSize);
+        ctx.lineTo(triangleX, triangleY);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw line from triangle to state
+        ctx.beginPath();
+        ctx.moveTo(triangleX, triangleY);
+        ctx.lineTo(state.x - 30, state.y);
+        ctx.strokeStyle = "#2563eb";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
       ctx.beginPath();
       ctx.arc(state.x, state.y, 30, 0, Math.PI * 2);
       ctx.fillStyle = "#fef3c7";
@@ -270,13 +334,31 @@ function Automata() {
       ctx.lineWidth = 2;
       ctx.stroke();
 
+      // Draw double circle for final states
+      if (state.final) {
+        ctx.beginPath();
+        ctx.arc(state.x, state.y, 24, 0, Math.PI * 2);
+        ctx.strokeStyle = "#2563eb";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+
       ctx.fillStyle = "#000";
       ctx.font = "16px Arial";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(state.id, state.x, state.y);
     });
-  }, [states, transitions, dragFrom, dragTo]);
+
+    // Draw comments -> really easy to alter if you guys want different fonts.
+    comments.forEach((comment) => {
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "14px Arial";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(comment.text, comment.x, comment.y);
+    });
+  }, [states, transitions, dragFrom, dragTo, comments]);
 
   // Mouse handlers
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -296,7 +378,9 @@ function Automata() {
       if (state) {
         setDragFrom(state.id);
         setDragTo({ x, y });
+
       }
+
     } else if (selectedTool === "delete") {
       const state = automaton.getStateAt(x, y);
       if (state) {
@@ -305,9 +389,36 @@ function Automata() {
         updateAutomaton(newAutomaton);
       }
     } else if (selectedTool === "select") {
+      const comment = getCommentAt(x, y);
+      if (comment) {
+        setDraggingComment(comment.id);
+        return;
+      }
       const state = automaton.getStateAt(x, y);
       if (state) {
         setDraggingState(state.id);
+      }
+    }
+    else if (selectedTool === "initial"){
+      const state = automaton.getStateAt(x, y);
+      if (state) {
+        const newAutomaton = automaton.clone();
+        newAutomaton.setInitialState(state.id);
+        updateAutomaton(newAutomaton);
+      }
+    }
+    else if (selectedTool === "comment") {
+      const text = prompt("Enter comment:");
+      if (text) {
+        setComments([...comments, { id: `c${commentIdRef.current++}`, x, y, text }]);
+      }
+    }
+    else if (selectedTool === "final"){
+      const state = automaton.getStateAt(x, y);
+      if (state) {
+        const newAutomaton = automaton.clone();
+        newAutomaton.setFinalState(state.id);
+        updateAutomaton(newAutomaton);
       }
     }
   };
@@ -328,6 +439,8 @@ function Automata() {
         s.id === draggingState ? { ...s, x, y } : s
       );
       setAutomaton(automaton.clone());
+    } else if (draggingComment) {
+      setComments(comments.map((c) => c.id === draggingComment ? { ...c, x, y } : c));
     }
   };
 
@@ -336,6 +449,10 @@ function Automata() {
     if (draggingState) {
       updateAutomaton(automaton.clone());
       setDraggingState(null);
+      return;
+    }
+    if (draggingComment) {
+      setDraggingComment(null);
       return;
     }
 
@@ -398,10 +515,48 @@ function Automata() {
             <div className="dropdown-menu">
               <div className="menu-option">Step with Closure...</div>
               <div className="menu-option">Step by State...</div>
-              <div className="menu-option">Fast Run...</div>
-              <div className="menu-option">Multiple Run</div>
-            </div>
-          )}
+              <div 
+              className="menu-option">Multiple Run</div>
+          <div
+            className="menu-option"
+            onClick={() => {
+              const input = prompt("Enter input string:");
+              if (input !== null) {
+                //this finds initial state
+                  let currentStates = automaton.states.filter(s => s.initial).map(s => s.id);
+                  // Process each symbol in the input
+                  for (const symbol of input) {
+                    const nextStates = new Set<string>();
+                    automaton.transitions.forEach(t => {
+                      // Check if transition is valid from any of the current states
+                      if (currentStates.includes(t.from) && t.label === symbol) {
+                        nextStates.add(t.to);
+                      }
+                    });
+                    // Move to next set of states
+                    currentStates = Array.from(nextStates);
+                  }
+                  // Check if any of the current states is a final state
+                  const isAccepted = currentStates.length > 0 && currentStates.some(sId => {
+                    const state = automaton.states.find(s => s.id === sId);
+                    return state?.final;
+                  });
+                  
+                  if (isAccepted) {
+                    alert(`Input "${input}" is accepted.`);
+                  } else {
+                    alert(`Input "${input}" is rejected.`);
+                  }
+                  
+                
+              }
+            }}
+          >
+            Fast Run
+          </div>
+
+        </div>
+        )}
         </div>
 
         <div className="menu-item">
@@ -481,51 +636,89 @@ function Automata() {
       <div className="editor-section">
         <div className="editor-tab">Automata Editor</div>
 
-        {/* Toolbar with 6 buttons */}
-        <div className="toolbar">
+        {/* Toolbar - can be collapsed to save space, selected tool stays active */}
+        {toolbarCollapsed ? (
+          <div className="toolbar toolbar-collapsed">
+            <button
+              className="tool-button toggle-btn"
+              title="Show Tools"
+              onClick={() => setToolbarCollapsed(false)}
+            >
+              ∨
+            </button>
+          </div>
+        ) : (
+          <div className="toolbar">
+            <button
+              className={`tool-button ${selectedTool === "select" ? "active" : ""}`}
+              title="Select"
+              onClick={() => setSelectedTool("select")}
+            >
+              ➤
+            </button>
+            <button
+              className={`tool-button ${selectedTool === "state" ? "active" : ""}`}
+              title="Add State"
+              onClick={() => setSelectedTool("state")}
+            >
+              ⓠ
+            </button>
+            <button
+            className={`tool-button ${
+              selectedTool === "initial" ? "active" : ""
+            }`}
+            title="Mark State as Initial"
+            onClick={() => setSelectedTool("initial")}
+          >
+            ⓘ
+          </button>
           <button
             className={`tool-button ${
-              selectedTool === "select" ? "active" : ""
+              selectedTool === "final" ? "active" : ""
             }`}
-            title="Select"
-            onClick={() => setSelectedTool("select")}
+            title="Toggle State as Final"
+            onClick={() => setSelectedTool("final")}
           >
-            ➤
+            ⓕ
           </button>
           <button
-            className={`tool-button ${
-              selectedTool === "state" ? "active" : ""
-            }`}
-            title="Add State"
-            onClick={() => setSelectedTool("state")}
-          >
-            ⓠ
-          </button>
-          <button
-            className={`tool-button ${
-              selectedTool === "transition" ? "active" : ""
-            }`}
-            title="Add Transition"
-            onClick={() => setSelectedTool("transition")}
-          >
-            →
-          </button>
-          <button
-            className={`tool-button ${
-              selectedTool === "delete" ? "active" : ""
-            }`}
-            title="Delete"
-            onClick={() => setSelectedTool("delete")}
-          >
-            ☠
-          </button>
-          <button className="tool-button" title="Undo" onClick={undo}>
-            ↶
-          </button>
-          <button className="tool-button" title="Redo" onClick={redo}>
-            ↷
-          </button>
+              className={`tool-button ${selectedTool === "transition" ? "active" : ""}`}
+              title="Add Transition"
+              onClick={() => setSelectedTool("transition")}
+            >
+              →
+            </button>
+            <button
+              className={`tool-button ${selectedTool === "delete" ? "active" : ""}`}
+              title="Delete"
+              onClick={() => setSelectedTool("delete")}
+            >
+              ☠
+            </button>
+            <button className="tool-button" title="Undo" onClick={undo}>
+              ↶
+            </button>
+            <button className="tool-button" title="Redo" onClick={redo}>
+              ↷
+            </button>
+            <button
+              className={`tool-button ${selectedTool === "comment" ? "active" : ""}`}
+              title="Add Comment"
+              onClick={() => setSelectedTool("comment")}
+            >
+              💬
+            </button>
+            {/* Collapse button - hides toolbar to give more canvas space */}
+            <button
+              className="tool-button toggle-btn"
+              title="Hide Tools"
+              onClick={() => setToolbarCollapsed(true)}
+            >
+              ∧
+            </button>
+            
         </div>
+        )}
 
         {/* Canvas for drawing automata */}
         <div className="canvas-container">
