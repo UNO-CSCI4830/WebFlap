@@ -19,6 +19,14 @@ export interface Transition {
   label: string;
 }
 
+// Comment interface - text annotations on the canvas
+export interface Comment {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+}
+
 export class Automaton {
   states: State[];
   transitions: Transition[];
@@ -165,6 +173,7 @@ function Automata() {
 
   // Track which tool is selected
   const [selectedTool, setSelectedTool] = useState<string>("");
+  const [toolbarCollapsed, setToolbarCollapsed] = useState(false);
 
   // Transition dragging
   const [dragFrom, setDragFrom] = useState<string | null>(null);
@@ -173,7 +182,17 @@ function Automata() {
   // State dragging (for select tool)
   const [draggingState, setDraggingState] = useState<string | null>(null);
 
+  // Comments on canvas
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [draggingComment, setDraggingComment] = useState<string | null>(null);
+  const commentIdRef = useRef(0);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Helper to find comment at position
+  const getCommentAt = (x: number, y: number): Comment | null => {
+    return comments.find((c) => Math.abs(c.x - x) < 50 && Math.abs(c.y - y) < 15) || null;
+  };
 
   // Close menus when clicking outside
   useEffect(() => {
@@ -330,7 +349,16 @@ function Automata() {
       ctx.textBaseline = "middle";
       ctx.fillText(state.id, state.x, state.y);
     });
-  }, [states, transitions, dragFrom, dragTo]);
+
+    // Draw comments -> really easy to alter if you guys want different fonts.
+    comments.forEach((comment) => {
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "14px Arial";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(comment.text, comment.x, comment.y);
+    });
+  }, [states, transitions, dragFrom, dragTo, comments]);
 
   // Mouse handlers
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -361,6 +389,11 @@ function Automata() {
         updateAutomaton(newAutomaton);
       }
     } else if (selectedTool === "select") {
+      const comment = getCommentAt(x, y);
+      if (comment) {
+        setDraggingComment(comment.id);
+        return;
+      }
       const state = automaton.getStateAt(x, y);
       if (state) {
         setDraggingState(state.id);
@@ -400,6 +433,8 @@ function Automata() {
         s.id === draggingState ? { ...s, x, y } : s
       );
       setAutomaton(automaton.clone());
+    } else if (draggingComment) {
+      setComments(comments.map((c) => c.id === draggingComment ? { ...c, x, y } : c));
     }
   };
 
@@ -408,6 +443,10 @@ function Automata() {
     if (draggingState) {
       updateAutomaton(automaton.clone());
       setDraggingState(null);
+      return;
+    }
+    if (draggingComment) {
+      setDraggingComment(null);
       return;
     }
 
@@ -591,27 +630,34 @@ function Automata() {
       <div className="editor-section">
         <div className="editor-tab">Automata Editor</div>
 
-        {/* Toolbar with 6 buttons */}
-        <div className="toolbar">
-          <button
-            className={`tool-button ${
-              selectedTool === "select" ? "active" : ""
-            }`}
-            title="Select"
-            onClick={() => setSelectedTool("select")}
-          >
-            ➤
-          </button>
-          <button
-            className={`tool-button ${
-              selectedTool === "state" ? "active" : ""
-            }`}
-            title="Add State"
-            onClick={() => setSelectedTool("state")}
-          >
-            ⓠ
-          </button>
-          <button
+        {/* Toolbar - can be collapsed to save space, selected tool stays active */}
+        {toolbarCollapsed ? (
+          <div className="toolbar toolbar-collapsed">
+            <button
+              className="tool-button toggle-btn"
+              title="Show Tools"
+              onClick={() => setToolbarCollapsed(false)}
+            >
+              ∨
+            </button>
+          </div>
+        ) : (
+          <div className="toolbar">
+            <button
+              className={`tool-button ${selectedTool === "select" ? "active" : ""}`}
+              title="Select"
+              onClick={() => setSelectedTool("select")}
+            >
+              ➤
+            </button>
+            <button
+              className={`tool-button ${selectedTool === "state" ? "active" : ""}`}
+              title="Add State"
+              onClick={() => setSelectedTool("state")}
+            >
+              ⓠ
+            </button>
+            <button
             className={`tool-button ${
               selectedTool === "initial" ? "active" : ""
             }`}
@@ -630,31 +676,43 @@ function Automata() {
             ⓕ
           </button>
           <button
-            className={`tool-button ${
-              selectedTool === "transition" ? "active" : ""
-            }`}
-            title="Add Transition"
-            onClick={() => setSelectedTool("transition")}
-          >
-            →
-          </button>
-          <button
-            className={`tool-button ${
-              selectedTool === "delete" ? "active" : ""
-            }`}
-            title="Delete"
-            onClick={() => setSelectedTool("delete")}
-          >
-            ☠
-          </button>
-          <button className="tool-button" title="Undo" onClick={undo}>
-            ↶
-          </button>
-          <button className="tool-button" title="Redo" onClick={redo}>
-            ↷
-          </button>
-          
+              className={`tool-button ${selectedTool === "transition" ? "active" : ""}`}
+              title="Add Transition"
+              onClick={() => setSelectedTool("transition")}
+            >
+              →
+            </button>
+            <button
+              className={`tool-button ${selectedTool === "delete" ? "active" : ""}`}
+              title="Delete"
+              onClick={() => setSelectedTool("delete")}
+            >
+              ☠
+            </button>
+            <button className="tool-button" title="Undo" onClick={undo}>
+              ↶
+            </button>
+            <button className="tool-button" title="Redo" onClick={redo}>
+              ↷
+            </button>
+            <button
+              className={`tool-button ${selectedTool === "comment" ? "active" : ""}`}
+              title="Add Comment"
+              onClick={() => setSelectedTool("comment")}
+            >
+              💬
+            </button>
+            {/* Collapse button - hides toolbar to give more canvas space */}
+            <button
+              className="tool-button toggle-btn"
+              title="Hide Tools"
+              onClick={() => setToolbarCollapsed(true)}
+            >
+              ∧
+            </button>
+            
         </div>
+        )}
 
         {/* Canvas for drawing automata */}
         <div className="canvas-container">
