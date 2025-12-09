@@ -602,9 +602,15 @@ function Automata() {
           <button
             className="menu-button"
             
-            onClick={() => 
-              navigate('/Tutorials')
+            onClick={() => {
+              const w = window.open('/tutorials', '_blank');
+              if (w) {
+                w.focus();
+              }
+
             }
+          }
+
           >
             Help
           </button>
