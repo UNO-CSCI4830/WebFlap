@@ -10,6 +10,7 @@ import ProjectSelection from "./ProjectSelection.tsx";
 import Features from "./Features.tsx";
 import Tutorials from "./Tutorials.tsx";
 import MultipleBruteForceParse from "./MultipleBruteForce.tsx";
+import Regex from "./Regex.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -23,6 +24,7 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/new" element={<ProjectSelection />} />
         <Route path="/features" element={<Features />} />
         <Route path="/tutorials" element={<Tutorials />} />
+        <Route path="/regex" element={<Regex />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>

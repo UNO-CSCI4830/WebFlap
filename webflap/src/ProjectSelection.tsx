@@ -23,6 +23,11 @@ export default function ProjectSelection() {
                 description: "Design and simulate finite automata.",
                 link: "/automata",
               },
+              {
+                name: "Regular Expressions",
+                description: "Build and utilize regular expressions.",
+                link: "/regex",
+              },
             ].map((project) => (
               <Link
                 to={project.link}
