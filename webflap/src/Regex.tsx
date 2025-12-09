@@ -54,6 +54,7 @@ function Regex() {
 
   const parseString = (target: string) => {
     const regularExpression = new RegExp("^" + regex! + "$");
+
     if ( regularExpression.test(target)) {
         setResults((prev) => [
           ...prev,
