@@ -87,8 +87,65 @@ function Regex() {
           </button>
           {openMenu === 'file' && (
             <div className="dropdown-menu">
-              <div className="menu-option">Import File</div>
-              <div className="menu-option">Export/Save As...</div>
+              <div
+                className="menu-option"
+                onClick={() => {
+                  setRegularExpression("");
+                  setInputs(['']);
+                  setResults([]);
+                  setOpenMenu(null);
+                }}
+              >
+                New Blank File
+              </div>
+
+              <div
+                className="menu-option"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.jff';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      const { parseJFFFile, extractRegex } = await import('./jffParser');
+                      const parsed = await parseJFFFile(file);
+                      if (parsed.projectType === 'regex') {
+                        const expression = extractRegex(parsed.xml);
+                        setRegularExpression(expression);
+                      } else {
+                        alert('This file is not a regex JFF file.');
+                      }
+                    }
+                  };
+                  input.click();
+                  setOpenMenu(null);
+                }}
+              >
+                Import JFF File
+              </div>
+
+              <div
+                className="menu-option"
+                onClick={() => {
+                  const jffContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<structure>
+  <type>re</type>
+  <expression>${regex || ''}</expression>
+</structure>`;
+                  
+                  const blob = new Blob([jffContent], { type: 'application/xml' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'regex.jff';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  setOpenMenu(null);
+                }}
+              >
+                Export JFF File
+              </div>
             </div>
           )}
         </div>

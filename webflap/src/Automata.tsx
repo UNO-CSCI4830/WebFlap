@@ -657,11 +657,112 @@ export function Automata() {
           </button>
           {openMenu === "file" && (
             <div className="dropdown-menu">
-              <div className="menu-option">New...</div>
-              <div className="menu-option">Open...</div>
-              <div className="menu-option">Save</div>
-              <div className="menu-option">Save As...</div>
-              <div className="menu-option">Close</div>
+              <div
+                className="menu-option"
+                onClick={() => {
+                  setAutomaton(new Automaton());
+                  setHistory([new Automaton()]);
+                  setHistoryIndex(0);
+                  setComments([]);
+                  setOpenMenu(null);
+                }}
+              >
+                New Blank File
+              </div>
+
+              <div
+                className="menu-option"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.jff';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      const { parseJFFFile, parseAutomatonJFF } = await import('./jffParser');
+                      const parsed = await parseJFFFile(file);
+                      if (parsed.projectType === 'automata') {
+                        const importedAutomaton = parseAutomatonJFF(parsed.text);
+                        const states = importedAutomaton.states.map(s => ({
+                          id: s.name,
+                          x: s.x,
+                          y: s.y,
+                          initial: s.initial,
+                          final: s.final,
+                        }));
+                        const transitions = importedAutomaton.transitions.map(t => ({
+                          from: importedAutomaton.states.find(s => s.id === t.from)!.name,
+                          to: importedAutomaton.states.find(s => s.id === t.to)!.name,
+                          label: t.read,
+                        }));
+                        const newAutomaton = new Automaton(states, transitions, states.length);
+                        setAutomaton(newAutomaton);
+                        setHistory([newAutomaton]);
+                        setHistoryIndex(0);
+                        // Load notes from JFF as comments
+                        const importedComments = importedAutomaton.notes.map((n, i) => ({
+                          id: `c${i}`,
+                          text: n.text,
+                          x: n.x,
+                          y: n.y,
+                        }));
+                        setComments(importedComments);
+                        commentIdRef.current = importedComments.length;
+                      } else {
+                        alert('This file is not an automata JFF file.');
+                      }
+                    }
+                  };
+                  input.click();
+                  setOpenMenu(null);
+                }}
+              >
+                Import JFF File
+              </div>
+
+              <div
+                className="menu-option"
+                onClick={() => {
+                  const statesXml = states.map((s, i) => {
+                    let stateXml = `  <state id="${i}" name="${s.id}">\n    <x>${s.x}</x>\n    <y>${s.y}</y>\n`;
+                    if (s.initial) stateXml += `    <initial/>\n`;
+                    if (s.final) stateXml += `    <final/>\n`;
+                    stateXml += `  </state>`;
+                    return stateXml;
+                  }).join('\n');
+                  
+                  const stateIdMap = new Map(states.map((s, i) => [s.id, i]));
+                  const transitionsXml = transitions.map(t => 
+                    `  <transition>\n    <from>${stateIdMap.get(t.from)}</from>\n    <to>${stateIdMap.get(t.to)}</to>\n    <read>${t.label}</read>\n  </transition>`
+                  ).join('\n');
+                  
+                  // Export comments as notes
+                  const notesXml = comments.map(c => 
+                    `  <note>\n    <text>${c.text}</text>\n    <x>${c.x}</x>\n    <y>${c.y}</y>\n  </note>`
+                  ).join('\n');
+                  
+                  const jffContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<structure>
+  <type>fa</type>
+  <automaton>
+${statesXml}
+${transitionsXml}
+${notesXml}
+  </automaton>
+</structure>`;
+                  
+                  const blob = new Blob([jffContent], { type: 'application/xml' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'automaton.jff';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  setOpenMenu(null);
+                }}
+              >
+                Export JFF File
+              </div>
             </div>
           )}
         </div>
