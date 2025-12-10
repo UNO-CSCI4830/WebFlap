@@ -55,7 +55,9 @@ function Regex() {
   };
 
   const parseString = (target: string) => {
-    const regularExpression = new RegExp("^" + regex! + "$");
+    // Convert JFLAP + to JavaScript regex OR |
+    const convertedRegex = regex!.replace(/\+/g, '|');
+    const regularExpression = new RegExp("^(" + convertedRegex + ")$");
 
     if ( regularExpression.test(target)) {
         setResults((prev) => [
@@ -124,60 +126,19 @@ function Regex() {
             </div>
           )}
         </div>
-
         <div className="menu-item">
-          <button 
-          className="menu-button" 
-          onClick={() => setOpenMenu(openMenu === 'test' ? null : 'test')}
-          >
-            Test
-          </button>
-    
-        </div>
-
-        <div className="menu-item">
-          <button 
+          <button
             className="menu-button"
-            onClick={() => setOpenMenu(openMenu === 'help' ? null : 'help')}
-          >
-            Help
-          </button>
-          {openMenu === 'help' && (
-            <div className="dropdown-menu">
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `help:Help...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Help...
-                {openSubmenu === `help:Help...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Documentation</div>
-                    <div className="menu-option">Tutorials</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `help:About...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                About...
-                {openSubmenu === `help:About...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Version</div>
-                    <div className="menu-option">Licenses</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+            
+            onClick={() => {
+              const w = window.open('/tutorials', '_blank');
+              if (w) {
+                w.focus();
+              }}}
+          >Help</button>
         </div>
+        
+
       </div>
       <div className='editor-tab'
       >Regex Editor</div>

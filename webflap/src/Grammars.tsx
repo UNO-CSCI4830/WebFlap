@@ -516,38 +516,6 @@ function Grammars() {
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `input:Build LL(1) Parse Table`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Build LL(1) Parse Table
-                {openSubmenu === `input:Build LL(1) Parse Table` && (
-                  <div className="submenu">
-                    <div className="menu-option">Show Table</div>
-                    <div className="menu-option">Export...</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `input:Build SLR(1) Parse Table`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Build SLR(1) Parse Table
-                {openSubmenu === `input:Build SLR(1) Parse Table` && (
-                  <div className="submenu">
-                    <div className="menu-option">Show Table</div>
-                    <div className="menu-option">Export...</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
                   try{
                     const grammarWrapper = new ConcreteGrammar();
                     productions.forEach(p => {
@@ -601,37 +569,6 @@ function Grammars() {
                 Multiple Brute Force Parse
               </div>
 
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `input:User Control Parse`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                User Control Parse
-                {openSubmenu === `input:User Control Parse` && (
-                  <div className="submenu">
-                    <div className="menu-option">Start Interactive</div>
-                    <div className="menu-option">Instructions</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `input:CYK Parse`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                CYK Parse
-                {openSubmenu === `input:CYK Parse` && (
-                  <div className="submenu">
-                    <div className="menu-option">Start CYK</div>
-                    <div className="menu-option">Show Table</div>
-                  </div>
-                )}
-              </div>
             </div>
           )}
         </div>
@@ -699,124 +636,15 @@ function Grammars() {
           )}
 
         </div>
-
         <div className="menu-item">
-          <button 
+          <button
             className="menu-button"
-            onClick={() => setOpenMenu(openMenu === 'convert' ? null : 'convert')}
-          >
-            Convert
-          </button>
-          {openMenu === 'convert' && (
-            <div className="dropdown-menu">
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `convert:Convert CFG to PDA (LL)`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Convert CFG to PDA (LL)
-                {openSubmenu === `convert:Convert CFG to PDA (LL)` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Converter</div>
-                    <div className="menu-option">Options...</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `convert:Convert CFG to PDA (LR)`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Convert CFG to PDA (LR)
-                {openSubmenu === `convert:Convert CFG to PDA (LR)` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Converter</div>
-                    <div className="menu-option">Options...</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `convert:Convert Right-Linear Grammar to FA`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Convert Right-Linear Grammar to FA
-                {openSubmenu === `convert:Convert Right-Linear Grammar to FA` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Converter</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `convert:Transform Grammar`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Transform Grammar
-                {openSubmenu === `convert:Transform Grammar` && (
-                  <div className="submenu">
-                    <div className="menu-option">Left Factoring</div>
-                    <div className="menu-option">Eliminate Left Recursion</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="menu-item">
-          <button 
-            className="menu-button"
-            onClick={() => setOpenMenu(openMenu === 'help' ? null : 'help')}
-          >
-            Help
-          </button>
-          {openMenu === 'help' && (
-            <div className="dropdown-menu">
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `help:Help...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Help...
-                {openSubmenu === `help:Help...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Documentation</div>
-                    <div className="menu-option">Tutorials</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `help:About...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                About...
-                {openSubmenu === `help:About...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Version</div>
-                    <div className="menu-option">Licenses</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+            onClick={() => {
+              const w = window.open('/tutorials', '_blank');
+              if (w) {
+                w.focus();
+              }}}
+          >Help</button>
         </div>
 
         <div className="menu-item">
