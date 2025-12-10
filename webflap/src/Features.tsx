@@ -12,7 +12,7 @@ export default function Features() {
             Powerful Features for <span className="text-blue-800">Computational Theory</span>
           </h1>
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Everything you need to design, simulate, and understand formal languages and automata theory — all in your browser.
+            Everything you need to design, simulate, and understand formal languages and automata theory: all in your browser.
           </p>
         </section>
 
@@ -31,25 +31,25 @@ export default function Features() {
                 title: "Finite Automata",
                 desc: "Design and simulate Deterministic (DFA) and Non-Deterministic (NFA) Finite Automata with visual state transitions.",
                 icon: "",
-                features: ["DFA & NFA support", "State minimization", "NFA to DFA conversion", "Visual simulation"]
+                features: ["DFA & NFA support", "NFA Checking", "Visual simulation"]
               },
               {
                 title: "Regular Expressions",
                 desc: "Create and test regular expressions with instant pattern matching and validation.",
                 icon: "",
-                features: ["Pattern builder", "Live testing", "Convert to automata", "Syntax highlighting"]
+                features: ["Pattern builder", "Live testing", "Support for multiple Parsing"]
               },
               {
                 title: "Context-Free Grammars",
                 desc: "Define production rules, generate parse trees, and visualize derivations step by step.",
                 icon: "",
-                features: ["Grammar editor", "Parse tree generation", "Derivation steps", "Ambiguity detection"]
+                features: ["Grammar editor", "Parser", "Grammar Type Detector"]
               },
               {
-                title: "Turing Machines",
+                title: "Tutorials & Examples",
                 desc: "Build and execute Turing Machines with complete tape visualization and control.",
                 icon: "",
-                features: ["Unlimited tape", "Multi-track support", "Step-by-step execution", "Halting detection"]
+                features: ["Links to External Documentation", "Video Tutorials"]
               }
             ].map((model) => (
               <div
@@ -90,8 +90,8 @@ export default function Features() {
                 color: "blue"
               },
               {
-                title: "Step-by-Step Debugging",
-                desc: "Walk through each computation step to understand exactly how your automaton processes input strings.",
+                title: "Grammar Type Detection",
+                desc: "Comsky, Regular, Context-Free? Automatically identify the type of grammar you create.",
                 icon: "",
                 color: "purple"
               },
