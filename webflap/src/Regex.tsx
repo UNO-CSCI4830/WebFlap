@@ -4,7 +4,7 @@ import NavigationBar from "./NavigationBar";
 
 type ParseResult = { input: string; status: 'accepted' | 'rejected'; derivation?: string[] };
 
-function Regex() {
+export function Regex() {
 
     const [openMenu, setOpenMenu] = useState<string | null>(null);
     const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
