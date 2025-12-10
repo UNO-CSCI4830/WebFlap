@@ -1,5 +1,5 @@
 export interface Tutorial {
-  id: string;
+  category: string;
   title: string;
   desc: string;
   steps: string[];
@@ -8,7 +8,7 @@ export interface Tutorial {
 
 export const tutorials: Tutorial[] = [
   {
-    id: "general1",
+    category: "general",
     title: "Starting a New Project",
     desc: "Create a new project from one of our app's modules from scratch.",
     steps: [
@@ -18,21 +18,33 @@ export const tutorials: Tutorial[] = [
     ],
   },
   {
-    id: "general2",
+    category: "general",
     title: "Import Existing Project",
     desc: "Import a project you already have a .jff file of, which can be obtained either in JFlap or WebFlap.",
     steps: [],
   },
   {
-    id: "general3",
+    category: "general",
     title: "Site Navigation",
     desc: "Learn how to navigate the site and access the full range of functionality.",
     steps: [],
   },
   {
-    id: "grammars1",
-    title: "",
-    desc: "",
+    category: "grammars",
+    title: "Tutorial Title",
+    desc: "Tutorial Description",
+    steps: [],
+  },
+  {
+    category: "automata",
+    title: "Tutorial Title",
+    desc: "Tutorial Description",
+    steps: [],
+  },
+  {
+    category: "regex",
+    title: "Tutorial Title",
+    desc: "Tutorial Description",
     steps: [],
   },
 ];
