@@ -14,7 +14,7 @@ import Regex from "./Regex.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/WebFlap/">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/grammars" element={<Grammars />} />
