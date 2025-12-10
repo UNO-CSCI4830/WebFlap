@@ -2,7 +2,8 @@ export interface Tutorial {
   category: string;
   title: string;
   desc: string;
-  steps: string[];
+  steps?: string[];
+  image?: string;
   // Could add in an image property if desired to include one?
 }
 

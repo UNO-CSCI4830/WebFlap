@@ -48,7 +48,7 @@ export default function Tutorials() {
               ))}
           </div>
           {generalTutorial !== null && (
-            <div className="relative rounded-2xl border border-slate-200 bg-white shadow-sm p-6 transition-all duration-300 hover:scale-101 hover:shadow-lg hover:border-blue-200 text-center">
+            <div className="relative rounded-2xl border border-slate-200 bg-white shadow-sm p-6 transition-all duration-300 hover:scale-101 hover:shadow-lg hover:border-blue-200 text-center justify-center">
               <button
                 onClick={() => setGeneralTutorial(null)}
                 className="absolute top-3 right-3 p-2 rounded-full hover:bg-slate-100 transition cursor-pointer"
@@ -70,9 +70,14 @@ export default function Tutorials() {
               <h3 className="text-2xl font-semibold mb-3">
                 {generalTutorial.title}
               </h3>
-              {generalTutorial.steps.map((step) => (
+              {generalTutorial.steps?.map((step) => (
                 <p className="text-left py-2">{step}</p>
               ))}
+              {generalTutorial.image ? (
+                <img src={generalTutorial.image} className="py-2" />
+              ) : (
+                <></>
+              )}
             </div>
           )}
         </section>
@@ -119,9 +124,14 @@ export default function Tutorials() {
               <h3 className="text-2xl font-semibold mb-3">
                 {grammarsTutorial.title}
               </h3>
-              {grammarsTutorial.steps.map((step) => (
+              {grammarsTutorial.steps?.map((step) => (
                 <p className="text-left py-2">{step}</p>
               ))}
+              {grammarsTutorial.image ? (
+                <img src={grammarsTutorial.image} className="py-2" />
+              ) : (
+                <></>
+              )}
             </div>
           )}
         </section>
@@ -168,9 +178,14 @@ export default function Tutorials() {
               <h3 className="text-2xl font-semibold mb-3">
                 {automataTutorial.title}
               </h3>
-              {automataTutorial.steps.map((step) => (
+              {automataTutorial.steps?.map((step) => (
                 <p className="text-left py-2">{step}</p>
               ))}
+              {automataTutorial.image ? (
+                <img src={automataTutorial.image} className="py-2" />
+              ) : (
+                <></>
+              )}
             </div>
           )}
         </section>
@@ -219,9 +234,14 @@ export default function Tutorials() {
               <h3 className="text-2xl font-semibold mb-3">
                 {regexTutorial.title}
               </h3>
-              {regexTutorial.steps.map((step) => (
+              {regexTutorial.steps?.map((step) => (
                 <p className="text-left py-2">{step}</p>
               ))}
+              {regexTutorial.image ? (
+                <img src={regexTutorial.image} className="py-2" />
+              ) : (
+                <></>
+              )}
             </div>
           )}
         </section>
