@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from "react-router-dom";
 import NavigationBar from "./NavigationBar";
 import Modal from './PopCard';
 import './Grammars.css';
@@ -379,18 +380,40 @@ export class ConcreteGrammar extends Grammar {
     return true
   }
 
-function Grammars() {
-  const [productions, setProductions] = useState([
-    { id: 1, lhs: '', rhs: '' },
-    { id: 2, lhs: '', rhs: '' },
-    { id: 3, lhs: '', rhs: '' },
-    { id: 4, lhs: '', rhs: '' },
-    { id: 5, lhs: '', rhs: '' },
-    { id: 6, lhs: '', rhs: '' },
-  ]);
+ type ProductionRow = {
+  id: number;
+  lhs: string;
+  rhs: string;
+};
 
+function Grammars() {
+  const location = useLocation();
+  const importedProductions = location.state?.productions ?? null;
+  
+  const [productions, setProductions] = useState<ProductionRow[]>(() => {
+    if (importedProductions) {
+      // imported grammar from file into editor
+      return importedProductions.map((p: any, i: number) => ({
+        id: Date.now() + i,
+        lhs: p.lhs,
+        rhs: p.rhs
+      })).concat([
+        { id: Date.now() + 9999, lhs: "", rhs: "" }
+      ]);
+    }
+  
+    // default blank grammar
+    return [
+      { id: 1, lhs: "", rhs: "" },
+      { id: 2, lhs: "", rhs: "" },
+      { id: 3, lhs: "", rhs: "" },
+      { id: 4, lhs: "", rhs: "" },
+      { id: 5, lhs: "", rhs: "" },
+      { id: 6, lhs: "", rhs: "" },
+    ];
+  });
+  
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const [openGrammarTest, setOpenCard] = useState<boolean>(false);
   const [grammarTestResults, setGrammarTestResults] = useState<{
   isContextFree: boolean;
@@ -430,7 +453,6 @@ function Grammars() {
       // if clicked outside the menu bar, close menus
       if (!target || !target.closest('.menu-bar')) {
         setOpenMenu(null);
-        setOpenSubmenu(null);
       }
     };
 
@@ -468,38 +490,76 @@ function Grammars() {
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `file:New...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
+                  setProductions([
+                    { id: 1, lhs: "", rhs: "" },
+                    { id: 2, lhs: "", rhs: "" },
+                    { id: 3, lhs: "", rhs: "" },
+                    { id: 4, lhs: "", rhs: "" },
+                    { id: 5, lhs: "", rhs: "" },
+                    { id: 6, lhs: "", rhs: "" },
+                  ]);
+                  setOpenMenu(null);
                 }}
               >
-                New...
-                {openSubmenu === `file:New...` && (
-                  <div className="submenu">
-                    <div className="menu-option">From Scratch</div>
-                    <div className="menu-option">From Template</div>
-                  </div>
-                )}
+                New Blank File
               </div>
 
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `file:Open...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.jff';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      const { parseJFFFile, extractGrammarProductions } = await import('./jffParser');
+                      const parsed = await parseJFFFile(file);
+                      if (parsed.projectType === 'grammar') {
+                        const prods = extractGrammarProductions(parsed.xml);
+                        setProductions(prods.map((p, i) => ({
+                          id: Date.now() + i,
+                          lhs: p.lhs,
+                          rhs: p.rhs
+                        })).concat([{ id: Date.now() + 9999, lhs: "", rhs: "" }]));
+                      } else {
+                        alert('This file is not a grammar JFF file.');
+                      }
+                    }
+                  };
+                  input.click();
+                  setOpenMenu(null);
                 }}
               >
-                Open...
-                {openSubmenu === `file:Open...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Local</div>
-                    <div className="menu-option">Open URL</div>
-                  </div>
-                )}
+                Import JFF File
               </div>
 
-              <div className="menu-option">Save</div>
-              <div className="menu-option">Save As...</div>
-              <div className="menu-option">Close</div>
+              <div
+                className="menu-option"
+                onClick={() => {
+                  const validProductions = productions.filter(p => p.lhs.trim() !== '' || p.rhs.trim() !== '');
+                  const productionsXml = validProductions.map(p => 
+                    `  <production>\n    <left>${p.lhs}</left>\n    <right>${p.rhs}</right>\n  </production>`
+                  ).join('\n');
+                  
+                  const jffContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<structure>
+  <type>grammar</type>
+${productionsXml}
+</structure>`;
+                  
+                  const blob = new Blob([jffContent], { type: 'application/xml' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'grammar.jff';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  setOpenMenu(null);
+                }}
+              >
+                Export JFF File
+              </div>
             </div>
           )}
         </div>
@@ -513,38 +573,6 @@ function Grammars() {
           </button>
           {openMenu === 'input' && (
             <div className="dropdown-menu">
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `input:Build LL(1) Parse Table`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Build LL(1) Parse Table
-                {openSubmenu === `input:Build LL(1) Parse Table` && (
-                  <div className="submenu">
-                    <div className="menu-option">Show Table</div>
-                    <div className="menu-option">Export...</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `input:Build SLR(1) Parse Table`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Build SLR(1) Parse Table
-                {openSubmenu === `input:Build SLR(1) Parse Table` && (
-                  <div className="submenu">
-                    <div className="menu-option">Show Table</div>
-                    <div className="menu-option">Export...</div>
-                  </div>
-                )}
-              </div>
-
               <div
                 className="menu-option"
                 onClick={() => {
@@ -566,7 +594,7 @@ function Grammars() {
                     console.error('Failed to save grammar to localStorage', err);
                   }
                   // open new tab at route /bruteforce
-                  const w = window.open('/bruteforce', '_blank');
+                  const w = window.open('/WebFlap/#/bruteforce', '_blank');
                   if (w) w.focus();
                 }}
               >
@@ -594,44 +622,13 @@ function Grammars() {
                     console.error('Failed to save grammar to localStorage', err);
                   }
                   // open new tab at route /bruteforce
-                  const w = window.open('/multiplebruteforce', '_blank');
+                  const w = window.open('/WebFlap/#/multiplebruteforce', '_blank');
                   if (w) w.focus();
                 }}
               >
                 Multiple Brute Force Parse
               </div>
 
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `input:User Control Parse`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                User Control Parse
-                {openSubmenu === `input:User Control Parse` && (
-                  <div className="submenu">
-                    <div className="menu-option">Start Interactive</div>
-                    <div className="menu-option">Instructions</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `input:CYK Parse`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                CYK Parse
-                {openSubmenu === `input:CYK Parse` && (
-                  <div className="submenu">
-                    <div className="menu-option">Start CYK</div>
-                    <div className="menu-option">Show Table</div>
-                  </div>
-                )}
-              </div>
             </div>
           )}
         </div>
@@ -699,124 +696,15 @@ function Grammars() {
           )}
 
         </div>
-
         <div className="menu-item">
-          <button 
+          <button
             className="menu-button"
-            onClick={() => setOpenMenu(openMenu === 'convert' ? null : 'convert')}
-          >
-            Convert
-          </button>
-          {openMenu === 'convert' && (
-            <div className="dropdown-menu">
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `convert:Convert CFG to PDA (LL)`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Convert CFG to PDA (LL)
-                {openSubmenu === `convert:Convert CFG to PDA (LL)` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Converter</div>
-                    <div className="menu-option">Options...</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `convert:Convert CFG to PDA (LR)`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Convert CFG to PDA (LR)
-                {openSubmenu === `convert:Convert CFG to PDA (LR)` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Converter</div>
-                    <div className="menu-option">Options...</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `convert:Convert Right-Linear Grammar to FA`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Convert Right-Linear Grammar to FA
-                {openSubmenu === `convert:Convert Right-Linear Grammar to FA` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Converter</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `convert:Transform Grammar`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Transform Grammar
-                {openSubmenu === `convert:Transform Grammar` && (
-                  <div className="submenu">
-                    <div className="menu-option">Left Factoring</div>
-                    <div className="menu-option">Eliminate Left Recursion</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="menu-item">
-          <button 
-            className="menu-button"
-            onClick={() => setOpenMenu(openMenu === 'help' ? null : 'help')}
-          >
-            Help
-          </button>
-          {openMenu === 'help' && (
-            <div className="dropdown-menu">
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `help:Help...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Help...
-                {openSubmenu === `help:Help...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Documentation</div>
-                    <div className="menu-option">Tutorials</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `help:About...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                About...
-                {openSubmenu === `help:About...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Version</div>
-                    <div className="menu-option">Licenses</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+            onClick={() => {
+              const w = window.open('/WebFlap/#/tutorials', '_blank');
+              if (w) {
+                w.focus();
+              }}}
+          >Help</button>
         </div>
 
         <div className="menu-item">

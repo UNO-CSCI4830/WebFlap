@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import "./Automata.css";
 import NavigationBar from "./NavigationBar";
-import { useNavigate } from 'react-router-dom';
+import type { ParsedAutomaton } from "./jffParser";
+
 
 let allPlacedTransitions: {from: string, to: string, label: string}[] = [];
 // Simple state interface
@@ -18,6 +20,51 @@ export interface Transition {
   from: string;
   to: string;
   label: string;
+}
+export function simulateAutomaton(automaton: Automaton, input: string): boolean {
+  // Find initial state(s)
+  function epsilonClosure(states: string[]): string[] {
+    const closure = new Set<string>(states);
+    const stack = [...states];
+    
+    while (stack.length > 0) {
+      const state = stack.pop()!;
+      
+      // Find all epsilon transitions from this state
+      automaton.transitions.forEach(t => {
+        if (t.from === state && (t.label === '' || t.label === 'ε' )) {
+          if (!closure.has(t.to)) {
+            closure.add(t.to);
+            stack.push(t.to);
+          }
+        }
+      });
+    }
+    return Array.from(closure);
+  }
+  let initialStates = automaton.states
+    .filter(s => s.initial)
+    .map(s => s.id);
+  let currentStates = epsilonClosure(initialStates);
+
+  // Process each symbol in the input
+  for (const symbol of input) {
+    const nextStates = new Set<string>();
+    
+    automaton.transitions.forEach(t => {
+      if (currentStates.includes(t.from) && t.label === symbol) {
+        nextStates.add(t.to);
+      }
+    });
+    
+    currentStates = epsilonClosure(Array.from(nextStates));
+  }
+
+  // Check if any current state is a final state
+  return currentStates.length > 0 && currentStates.some(sId => {
+    const state = automaton.states.find(s => s.id === sId);
+    return state?.final;
+  });
 }
 
 // Comment interface - text annotations on the canvas
@@ -40,10 +87,16 @@ export class Automaton {
   }
 
 
-   //Adds a new state at the given coordinates
+   //Adds a new state at the given coordinates (reuses lowest available ID)
   addState(x: number, y: number, initial: boolean = false) {
-    this.states = [...this.states, { id: `q${this.nextId}`, x, y, initial }];
-    this.nextId++;
+    // Find the lowest available state number
+    const usedNumbers = this.states.map(s => parseInt(s.id.substring(1)));
+    let newId = 0;
+    while (usedNumbers.includes(newId)) {
+      newId++;
+    }
+    this.states = [...this.states, { id: `q${newId}`, x, y, initial }];
+    this.nextId = Math.max(this.nextId, newId + 1);
   }
 
   //Marks a state as initial (and unmarks all others)
@@ -76,6 +129,17 @@ export class Automaton {
     // Remove transitions from allPlacedTransitions
     allPlacedTransitions = allPlacedTransitions.filter(
       (t) => t.from !== stateId && t.to !== stateId
+    );
+  }
+
+  //Deletes a specific transition by from, to, and label
+  deleteTransition(from: string, to: string, label: string) {
+    this.transitions = this.transitions.filter(
+      (t) => !(t.from === from && t.to === to && t.label === label)
+    );
+    // Remove from allPlacedTransitions too
+    allPlacedTransitions = allPlacedTransitions.filter(
+      (t) => !(t.from === from && t.to === to && t.label === label)
     );
   }
 
@@ -139,13 +203,32 @@ export class TransitionHelper {
   }
 }
 
-function Automata() {
-  const navigate = useNavigate();
+export function Automata() {
+  const location = useLocation();
+  const imported = (location.state?.automaton as ParsedAutomaton) ?? null;
   // Track which menu is open
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   // Automaton data with undo/redo history
-  const [automaton, setAutomaton] = useState(new Automaton());
+  const [automaton, setAutomaton] = useState(() => {
+    if (!imported) return new Automaton();
+  
+    const states = imported.states.map(s => ({
+      id: s.name,          // use name as ID for display
+      x: s.x,
+      y: s.y,
+      initial: s.initial,
+      final: s.final,
+    }));
+  
+    const transitions = imported.transitions.map(t => ({
+      from: imported.states.find(s => s.id === t.from)!.name,
+      to: imported.states.find(s => s.id === t.to)!.name,
+      label: t.read,
+    }));
+  
+    return new Automaton(states, transitions, states.length);
+  });
   const [history, setHistory] = useState<Automaton[]>([new Automaton()]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const { states, transitions } = automaton;
@@ -194,6 +277,49 @@ function Automata() {
   // Helper to find comment at position
   const getCommentAt = (x: number, y: number): Comment | null => {
     return comments.find((c) => Math.abs(c.x - x) < 50 && Math.abs(c.y - y) < 15) || null;
+  };
+
+  // Helper to find transition at click position
+  const getTransitionAt = (x: number, y: number): Transition | null => {
+    // Check if reverse transition exists for bidirectional detection
+    const hasReverse = (fromId: string, toId: string) => {
+      return transitions.some(tr => tr.from === toId && tr.to === fromId);
+    };
+    
+    for (const t of transitions) {
+      const from = states.find((s) => s.id === t.from);
+      const to = states.find((s) => s.id === t.to);
+      if (!from || !to) continue;
+
+      // Check if self-loop (label is above the state)
+      if (t.from === t.to) {
+        const labelX = from.x;
+        const labelY = from.y - 75;
+        if (Math.abs(x - labelX) < 30 && Math.abs(y - labelY) < 20) {
+          return t;
+        }
+      } else {
+        // Regular transition - check near the label position
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        const startX = from.x + 30 * Math.cos(angle);
+        const startY = from.y + 30 * Math.sin(angle);
+        const endX = to.x - 30 * Math.cos(angle);
+        const endY = to.y - 30 * Math.sin(angle);
+        
+        // Account for curve offset if bidirectional
+        const hasBidirectional = hasReverse(t.from, t.to);
+        const curveOffset = hasBidirectional ? 20 : 0;
+        const perpX = -Math.sin(angle) * curveOffset;
+        const perpY = Math.cos(angle) * curveOffset;
+        const midX = (startX + endX) / 2 + perpX;
+        const midY = (startY + endY) / 2 + perpY - 10;
+        
+        if (Math.abs(x - midX) < 30 && Math.abs(y - midY) < 20) {
+          return t;
+        }
+      }
+    }
+    return null;
   };
 
   // Close menus when clicking outside
@@ -253,31 +379,50 @@ function Automata() {
         const endX = to.x - 30 * Math.cos(angle);
         const endY = to.y - 30 * Math.sin(angle);
 
+        // Check if there's a reverse transition (bidirectional)
+        const reverseKey = `${toId}->${fromId}`;
+        const hasBidirectional = groupedTransitions.has(reverseKey);
+        
+        // Curve offset for bidirectional arrows
+        const curveOffset = hasBidirectional ? 20 : 0;
+        const perpX = -Math.sin(angle) * curveOffset;
+        const perpY = Math.cos(angle) * curveOffset;
+        const ctrlX = (startX + endX) / 2 + perpX;
+        const ctrlY = (startY + endY) / 2 + perpY;
+
         ctx.beginPath();
         ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
+        if (hasBidirectional) {
+          // Draw curved line for bidirectional
+          ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+        } else {
+          ctx.lineTo(endX, endY);
+        }
         ctx.strokeStyle = "#2563eb";
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Arrowhead
+        // Arrowhead (adjust angle for curved arrow)
         const headlen = 15;
+        const arrowAngle = hasBidirectional 
+          ? Math.atan2(endY - ctrlY, endX - ctrlX) 
+          : angle;
         ctx.beginPath();
         ctx.moveTo(endX, endY);
         ctx.lineTo(
-          endX - headlen * Math.cos(angle - Math.PI / 6),
-          endY - headlen * Math.sin(angle - Math.PI / 6)
+          endX - headlen * Math.cos(arrowAngle - Math.PI / 6),
+          endY - headlen * Math.sin(arrowAngle - Math.PI / 6)
         );
         ctx.moveTo(endX, endY);
         ctx.lineTo(
-          endX - headlen * Math.cos(angle + Math.PI / 6),
-          endY - headlen * Math.sin(angle + Math.PI / 6)
+          endX - headlen * Math.cos(arrowAngle + Math.PI / 6),
+          endY - headlen * Math.sin(arrowAngle + Math.PI / 6)
         );
         ctx.stroke();
 
-        // Draw labels stacked vertically (newest on top)
-        const midX = (startX + endX) / 2;
-        const midY = (startY + endY) / 2;
+        // Draw labels at midpoint (or curve peak for bidirectional)
+        const midX = hasBidirectional ? ctrlX : (startX + endX) / 2;
+        const midY = hasBidirectional ? ctrlY : (startY + endY) / 2;
         ctx.fillStyle = "#000";
         ctx.font = "14px Arial";
         ctx.textAlign = "center";
@@ -384,11 +529,26 @@ function Automata() {
       }
 
     } else if (selectedTool === "delete") {
+      // First check if clicking on a state
       const state = automaton.getStateAt(x, y);
       if (state) {
         const newAutomaton = automaton.clone();
         newAutomaton.deleteState(state.id);
         updateAutomaton(newAutomaton);
+        return;
+      }
+      // Check if clicking on a transition label
+      const transition = getTransitionAt(x, y);
+      if (transition) {
+        const newAutomaton = automaton.clone();
+        newAutomaton.deleteTransition(transition.from, transition.to, transition.label);
+        updateAutomaton(newAutomaton);
+        return;
+      }
+      // Check if clicking on a comment
+      const comment = getCommentAt(x, y);
+      if (comment) {
+        setComments(comments.filter((c) => c.id !== comment.id));
       }
     } else if (selectedTool === "select") {
       const comment = getCommentAt(x, y);
@@ -497,11 +657,112 @@ function Automata() {
           </button>
           {openMenu === "file" && (
             <div className="dropdown-menu">
-              <div className="menu-option">New...</div>
-              <div className="menu-option">Open...</div>
-              <div className="menu-option">Save</div>
-              <div className="menu-option">Save As...</div>
-              <div className="menu-option">Close</div>
+              <div
+                className="menu-option"
+                onClick={() => {
+                  setAutomaton(new Automaton());
+                  setHistory([new Automaton()]);
+                  setHistoryIndex(0);
+                  setComments([]);
+                  setOpenMenu(null);
+                }}
+              >
+                New Blank File
+              </div>
+
+              <div
+                className="menu-option"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.jff';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      const { parseJFFFile, parseAutomatonJFF } = await import('./jffParser');
+                      const parsed = await parseJFFFile(file);
+                      if (parsed.projectType === 'automata') {
+                        const importedAutomaton = parseAutomatonJFF(parsed.text);
+                        const states = importedAutomaton.states.map(s => ({
+                          id: s.name,
+                          x: s.x,
+                          y: s.y,
+                          initial: s.initial,
+                          final: s.final,
+                        }));
+                        const transitions = importedAutomaton.transitions.map(t => ({
+                          from: importedAutomaton.states.find(s => s.id === t.from)!.name,
+                          to: importedAutomaton.states.find(s => s.id === t.to)!.name,
+                          label: t.read,
+                        }));
+                        const newAutomaton = new Automaton(states, transitions, states.length);
+                        setAutomaton(newAutomaton);
+                        setHistory([newAutomaton]);
+                        setHistoryIndex(0);
+                        // Load notes from JFF as comments
+                        const importedComments = importedAutomaton.notes.map((n, i) => ({
+                          id: `c${i}`,
+                          text: n.text,
+                          x: n.x,
+                          y: n.y,
+                        }));
+                        setComments(importedComments);
+                        commentIdRef.current = importedComments.length;
+                      } else {
+                        alert('This file is not an automata JFF file.');
+                      }
+                    }
+                  };
+                  input.click();
+                  setOpenMenu(null);
+                }}
+              >
+                Import JFF File
+              </div>
+
+              <div
+                className="menu-option"
+                onClick={() => {
+                  const statesXml = states.map((s, i) => {
+                    let stateXml = `  <state id="${i}" name="${s.id}">\n    <x>${s.x}</x>\n    <y>${s.y}</y>\n`;
+                    if (s.initial) stateXml += `    <initial/>\n`;
+                    if (s.final) stateXml += `    <final/>\n`;
+                    stateXml += `  </state>`;
+                    return stateXml;
+                  }).join('\n');
+                  
+                  const stateIdMap = new Map(states.map((s, i) => [s.id, i]));
+                  const transitionsXml = transitions.map(t => 
+                    `  <transition>\n    <from>${stateIdMap.get(t.from)}</from>\n    <to>${stateIdMap.get(t.to)}</to>\n    <read>${t.label}</read>\n  </transition>`
+                  ).join('\n');
+                  
+                  // Export comments as notes
+                  const notesXml = comments.map(c => 
+                    `  <note>\n    <text>${c.text}</text>\n    <x>${c.x}</x>\n    <y>${c.y}</y>\n  </note>`
+                  ).join('\n');
+                  
+                  const jffContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<structure>
+  <type>fa</type>
+  <automaton>
+${statesXml}
+${transitionsXml}
+${notesXml}
+  </automaton>
+</structure>`;
+                  
+                  const blob = new Blob([jffContent], { type: 'application/xml' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'automaton.jff';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  setOpenMenu(null);
+                }}
+              >
+                Export JFF File
+              </div>
             </div>
           )}
         </div>
@@ -515,44 +776,21 @@ function Automata() {
           </button>
           {openMenu === "input" && (
             <div className="dropdown-menu">
-              <div className="menu-option">Step with Closure...</div>
-              <div className="menu-option">Step by State...</div>
-              <div 
-              className="menu-option">Multiple Run</div>
+              
           <div
             className="menu-option"
             onClick={() => {
-              const input = prompt("Enter input string:");
-              if (input !== null) {
-                //this finds initial state
-                  let currentStates = automaton.states.filter(s => s.initial).map(s => s.id);
-                  // Process each symbol in the input
-                  for (const symbol of input) {
-                    const nextStates = new Set<string>();
-                    automaton.transitions.forEach(t => {
-                      // Check if transition is valid from any of the current states
-                      if (currentStates.includes(t.from) && t.label === symbol) {
-                        nextStates.add(t.to);
-                      }
-                    });
-                    // Move to next set of states
-                    currentStates = Array.from(nextStates);
-                  }
-                  // Check if any of the current states is a final state
-                  const isAccepted = currentStates.length > 0 && currentStates.some(sId => {
-                    const state = automaton.states.find(s => s.id === sId);
-                    return state?.final;
-                  });
-                  
-                  if (isAccepted) {
-                    alert(`Input "${input}" is accepted.`);
-                  } else {
-                    alert(`Input "${input}" is rejected.`);
-                  }
-                  
-                
-              }
-            }}
+  const input = prompt("Enter input string:");
+  if (input !== null) {
+    const isAccepted = simulateAutomaton(automaton, input);
+    
+    if (isAccepted) {
+      alert(`Input "${input}" is accepted.`);
+    } else {
+      alert(`Input "${input}" is rejected.`);
+    }
+  }
+}}
           >
             Fast Run
           </div>
@@ -603,7 +841,7 @@ function Automata() {
             className="menu-button"
             
             onClick={() => {
-              const w = window.open('/tutorials', '_blank');
+              const w = window.open('/WebFlap/#/tutorials', '_blank');
               if (w) {
                 w.focus();
               }

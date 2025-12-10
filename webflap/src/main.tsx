@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 import Home from "./Home.tsx";
 import Grammars from "./Grammars.tsx";
@@ -14,7 +14,7 @@ import Regex from "./Regex.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/grammars" element={<Grammars />} />
@@ -26,6 +26,6 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/tutorials" element={<Tutorials />} />
         <Route path="/regex" element={<Regex />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   </StrictMode>
 );

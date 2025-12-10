@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import NavigationBar from "./NavigationBar";
+import { useLocation } from "react-router-dom";
 
 
 type ParseResult = { input: string; status: 'accepted' | 'rejected'; derivation?: string[] };
 
 function Regex() {
-
+    const location = useLocation();
+    const passedExpression = location.state?.expression as string | undefined;
     const [openMenu, setOpenMenu] = useState<string | null>(null);
-    const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
     const [inputs, setInputs] = useState<string[]>(['']);
     const [running, setRunning] = useState(false);
     const [results, setResults] = useState<ParseResult[]>([]);
-    const [regex, setRegularExpression] = useState<string | undefined>(undefined);
+    const [regex, setRegularExpression] = useState<string | undefined>(passedExpression ?? "");
     
     const handleInputChange = (index: number, value: string) => {
         const newInputs = [...inputs];
@@ -53,7 +54,9 @@ function Regex() {
   };
 
   const parseString = (target: string) => {
-    const regularExpression = new RegExp("^" + regex! + "$");
+    // Convert JFLAP + to JavaScript regex OR |
+    const convertedRegex = regex!.replace(/\+/g, '|');
+    const regularExpression = new RegExp("^(" + convertedRegex + ")$");
 
     if ( regularExpression.test(target)) {
         setResults((prev) => [
@@ -87,95 +90,78 @@ function Regex() {
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `file:New...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
+                  setRegularExpression("");
+                  setInputs(['']);
+                  setResults([]);
+                  setOpenMenu(null);
                 }}
               >
-                New...
-                {openSubmenu === `file:New...` && (
-                  <div className="submenu">
-                    <div className="menu-option">From Scratch</div>
-                    <div className="menu-option">From Template</div>
-                  </div>
-                )}
+                New Blank File
               </div>
 
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `file:Open...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.jff';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      const { parseJFFFile, extractRegex } = await import('./jffParser');
+                      const parsed = await parseJFFFile(file);
+                      if (parsed.projectType === 'regex') {
+                        const expression = extractRegex(parsed.xml);
+                        setRegularExpression(expression);
+                      } else {
+                        alert('This file is not a regex JFF file.');
+                      }
+                    }
+                  };
+                  input.click();
+                  setOpenMenu(null);
                 }}
               >
-                Open...
-                {openSubmenu === `file:Open...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Local</div>
-                    <div className="menu-option">Open URL</div>
-                  </div>
-                )}
+                Import JFF File
               </div>
 
-              <div className="menu-option">Save</div>
-              <div className="menu-option">Save As...</div>
-              <div className="menu-option">Close</div>
+              <div
+                className="menu-option"
+                onClick={() => {
+                  const jffContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<structure>
+  <type>re</type>
+  <expression>${regex || ''}</expression>
+</structure>`;
+                  
+                  const blob = new Blob([jffContent], { type: 'application/xml' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'regex.jff';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  setOpenMenu(null);
+                }}
+              >
+                Export JFF File
+              </div>
             </div>
           )}
         </div>
-
         <div className="menu-item">
-          <button 
-          className="menu-button" 
-          onClick={() => setOpenMenu(openMenu === 'test' ? null : 'test')}
-          >
-            Test
-          </button>
-    
-        </div>
-
-        <div className="menu-item">
-          <button 
+          <button
             className="menu-button"
-            onClick={() => setOpenMenu(openMenu === 'help' ? null : 'help')}
-          >
-            Help
-          </button>
-          {openMenu === 'help' && (
-            <div className="dropdown-menu">
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `help:Help...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Help...
-                {openSubmenu === `help:Help...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Documentation</div>
-                    <div className="menu-option">Tutorials</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `help:About...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                About...
-                {openSubmenu === `help:About...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Version</div>
-                    <div className="menu-option">Licenses</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+            
+            onClick={() => {
+              const w = window.open('/WebFlap/#/tutorials', '_blank');
+              if (w) {
+                w.focus();
+              }}}
+          >Help</button>
         </div>
+        
+
       </div>
       <div className='editor-tab'
       >Regex Editor</div>
