@@ -53,7 +53,9 @@ export function Regex() {
   };
 
   const parseString = (target: string) => {
-    const regularExpression = new RegExp("^" + regex! + "$");
+    // Convert JFLAP + to JavaScript regex OR |
+    const convertedRegex = regex!.replace(/\+/g, '|');
+    const regularExpression = new RegExp("^(" + convertedRegex + ")$");
 
     if ( regularExpression.test(target)) {
         setResults((prev) => [
