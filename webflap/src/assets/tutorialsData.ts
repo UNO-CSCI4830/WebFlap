@@ -1,10 +1,13 @@
+import WebFlapGrammar from "./WebFlap_Grammar.png";
+import WebFlapAutomata from "./WebFlap_Automata.png";
+import WebFlapRegex from "./WebFlap_REGEX.png";
+
 export interface Tutorial {
   category: string;
   title: string;
   desc: string;
   steps?: string[];
   image?: string;
-  // Could add in an image property if desired to include one?
 }
 
 export const tutorials: Tutorial[] = [
@@ -35,25 +38,25 @@ export const tutorials: Tutorial[] = [
     steps: [
       "1. Select options in the Navigation Bar at the top of the site to traverse top-level pages.",
       "2. Learn more about our site's suite of features under the 'Features' tab.",
-      "3. For our core functionality — project creation — click 'New Project' and get started.",
+      "3. For our core functionality - project creation - click 'New Project' and get started.",
     ],
   },
   {
     category: "grammars",
     title: "Grammar",
     desc: "How to make a Grammar",
-    image: "/src/assets/WebFlap_Grammar.png",
+    image: WebFlapGrammar,
   },
   {
     category: "automata",
     title: "Automata",
     desc: "How to make an Automaton",
-    image: "/src/assets/WebFlap_Automata.png",
+    image: WebFlapAutomata,
   },
   {
     category: "regex",
     title: "Regular Expressions",
     desc: "How to make Regular Expressions",
-    image: "/src/assets/WebFlap_REGEX.png",
+    image: WebFlapRegex,
   },
 ];
