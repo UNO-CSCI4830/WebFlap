@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import NavigationBar from "./NavigationBar";
+import { useLocation } from "react-router-dom";
 
 
 type ParseResult = { input: string; status: 'accepted' | 'rejected'; derivation?: string[] };
 
 function Regex() {
-
+    const location = useLocation();
+    const passedExpression = location.state?.expression as string | undefined;
     const [openMenu, setOpenMenu] = useState<string | null>(null);
     const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
     const [inputs, setInputs] = useState<string[]>(['']);
     const [running, setRunning] = useState(false);
     const [results, setResults] = useState<ParseResult[]>([]);
-    const [regex, setRegularExpression] = useState<string | undefined>(undefined);
+    const [regex, setRegularExpression] = useState<string | undefined>(passedExpression ?? "");
     
     const handleInputChange = (index: number, value: string) => {
         const newInputs = [...inputs];

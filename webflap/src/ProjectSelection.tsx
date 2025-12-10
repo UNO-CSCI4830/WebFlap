@@ -63,10 +63,21 @@ export default function ProjectSelection() {
   
     if (fileType === "grammar") {
       navigate("/grammars", { state: { fileText: text } });
+
     } else if (fileType === "automata") {
       navigate("/automata", { state: { fileText: text } });
+
     } else if (fileType === "regex") {
-      navigate("/regex", { state: { fileText: text } });
+      // extract regex to send along with file text
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(text, "application/xml");
+      const expressionNode = xml.querySelector("expression");
+      let expression = "";
+      if (expressionNode !== null && expressionNode.textContent != null) {
+        expression = expressionNode.textContent;
+      }
+
+      navigate("/regex", { state: { fileText: text, expression } });
     }
   };
 
