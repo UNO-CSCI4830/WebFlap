@@ -9,7 +9,6 @@ function Regex() {
     const location = useLocation();
     const passedExpression = location.state?.expression as string | undefined;
     const [openMenu, setOpenMenu] = useState<string | null>(null);
-    const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
     const [inputs, setInputs] = useState<string[]>(['']);
     const [running, setRunning] = useState(false);
     const [results, setResults] = useState<ParseResult[]>([]);
@@ -88,41 +87,8 @@ function Regex() {
           </button>
           {openMenu === 'file' && (
             <div className="dropdown-menu">
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `file:New...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                New...
-                {openSubmenu === `file:New...` && (
-                  <div className="submenu">
-                    <div className="menu-option">From Scratch</div>
-                    <div className="menu-option">From Template</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `file:Open...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Open...
-                {openSubmenu === `file:Open...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Local</div>
-                    <div className="menu-option">Open URL</div>
-                  </div>
-                )}
-              </div>
-
-              <div className="menu-option">Save</div>
-              <div className="menu-option">Save As...</div>
-              <div className="menu-option">Close</div>
+              <div className="menu-option">Import File</div>
+              <div className="menu-option">Export/Save As...</div>
             </div>
           )}
         </div>

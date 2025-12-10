@@ -1,11 +1,12 @@
 import NavigationBar from "./NavigationBar";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { parseJFFFile, parseAutomatonJFF, extractRegex, extractGrammarProductions, type JFFType } from "./jffParser";
 
 export default function ProjectSelection() {
   const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
-  const [fileType, setFileType] = useState<"grammar" | "automata" | "regex"| "invalid" | null>(null);
+  const [fileType, setFileType] = useState<JFFType | null>(null);
   const [message, setMessage] = useState("");
 
   // checks whether JFF file is grammar, automaton, or regular expression
@@ -19,35 +20,17 @@ export default function ProjectSelection() {
       setMessage("");
       return;
     }
-  
+    
+    const { xml, projectType } = await parseJFFFile(uploaded);
+
     setFile(uploaded);
+    setFileType(projectType);
   
-    const text = await uploaded.text();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(text, "application/xml");
-  
-    const typeNode = xml.querySelector("type");
-    const type = typeNode?.textContent?.trim();
-  
-    if (!type) {
-      setFileType("invalid");
-      setMessage("Invalid .jff file");
-      return;
-    }
-  
-    if (type === "grammar") {
-      setFileType("grammar");
-      setMessage("Valid grammar project uploaded");
-    } else if (type === "fa") {
-      setFileType("automata");
-      setMessage("Valid automata project uploaded");
-    }
-      else if (type === "re") {
-      setFileType("regex");
-      setMessage("Valid regular expression project uploaded");
-    } else {
-      setFileType("invalid");
+    if (projectType === "invalid") {
       setMessage("Please upload a grammar, automata, or regular expression .jff file");
+      return;
+    } else {
+      setMessage(`Valid ${projectType} project uploaded`);
     }
   };
 
@@ -59,24 +42,21 @@ export default function ProjectSelection() {
       return;
     }
   
-    const text = await file.text();
+    const { xml, text } = await parseJFFFile(file);
   
     if (fileType === "grammar") {
-      navigate("/grammars", { state: { fileText: text } });
+      // extract productions to send along with file text
+      const productions = extractGrammarProductions(xml);
+      navigate("/grammars", { state: { fileText: text, productions } });
 
     } else if (fileType === "automata") {
-      navigate("/automata", { state: { fileText: text } });
+      // extract automaton to send along with file text
+      const automaton = parseAutomatonJFF(text);
+      navigate("/automata", { state: { fileText: text, automaton } });
 
     } else if (fileType === "regex") {
       // extract regex to send along with file text
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(text, "application/xml");
-      const expressionNode = xml.querySelector("expression");
-      let expression = "";
-      if (expressionNode !== null && expressionNode.textContent != null) {
-        expression = expressionNode.textContent;
-      }
-
+      const expression = extractRegex(xml);
       navigate("/regex", { state: { fileText: text, expression } });
     }
   };
