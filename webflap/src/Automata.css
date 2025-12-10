@@ -132,6 +132,29 @@
   gap: 8px;
 }
 
+.toolbar-collapsed {
+  padding: 4px 16px;
+}
+
+.toolbar-collapsed .toggle-btn {
+  width: 30px;
+  height: 24px;
+  font-size: 14px;
+}
+
+/* Push collapse button to the right. */
+.toolbar .toggle-btn {
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.toolbar .toggle-btn:hover {
+  opacity: 1;
+}
+
 .tool-button {
   width: 40px;
   height: 40px;

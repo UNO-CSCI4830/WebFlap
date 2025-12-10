@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from "react-router-dom";
 import NavigationBar from "./NavigationBar";
+import Modal from './PopCard';
 import './Grammars.css';
 
 export class Production{
@@ -61,6 +63,7 @@ export class Production{
   }
 
 }
+
 
 export abstract class Grammar{
 
@@ -211,41 +214,213 @@ export class ConcreteGrammar extends Grammar {
       throw new Error('RHS cannot be null');
     }
   }
+
+  findDuplicateProductions(): Production[][] {
+    const duplicates: Production[][] = [];
+    const seen: Production[] = [];
+
+    for (const production of this.productions) {
+      const duplicate = seen.find(p => p.equal(production));
+      if (duplicate) {
+        duplicates.push([duplicate, production]);
+      } else {
+        seen.push(production);
+      }
+    }
+
+    return duplicates;
+  }
+
+  isVariableReachable(variable: string): boolean {
+    if (!this.startVariable) {
+      return false;
+    }
+
+    const reachable = new Set<string>();
+    const toProcess: string[] = [this.startVariable];
+
+    while (toProcess.length > 0) {
+      const current = toProcess.pop()!;
+
+      if (reachable.has(current)) {
+        continue;
+      }
+
+      reachable.add(current);
+
+      // Get all productions with current variable as LHS
+      const productions = this.getProductionsFor(current);
+
+      for (const production of productions) {
+        // Extract all variables from the RHS
+        const variables = production.getVariables();
+        for (const v of variables) {
+          if (!reachable.has(v)) {
+            toProcess.push(v);
+          }
+        }
+      }
+    }
+
+    return reachable.has(variable);
+  }
+
+  getReachableVariables(): string[] {
+    if (!this.startVariable) {
+      return [];
+    }
+
+    const reachable = new Set<string>();
+    const toProcess: string[] = [this.startVariable];
+
+    while (toProcess.length > 0) {
+      const current = toProcess.pop()!;
+
+      if (reachable.has(current)) {
+        continue;
+      }
+
+      reachable.add(current);
+
+      // Get all productions with current variable as LHS
+      const productions = this.getProductionsFor(current);
+
+      for (const production of productions) {
+        // Extract all variables from the RHS
+        const variables = production.getVariables();
+        for (const v of variables) {
+          if (!reachable.has(v)) {
+            toProcess.push(v);
+          }
+        }
+      }
+    }
+
+    return Array.from(reachable);
+  }
+
+  /**
+   * Gets all unreachable variables in the grammar.
+   * These are variables that cannot be derived from the start symbol.
+   */
+  getUnreachableVariables(): string[] {
+    const reachable = new Set(this.getReachableVariables());
+    return this.getVariables().filter(v => !reachable.has(v));
+  }
+
+  /**
+   * Determines if a production is reachable.
+   * A production is reachable if its LHS variable is reachable.
+   */
+  isProductionReachable(production: Production): boolean {
+    return this.isVariableReachable(production.lhs);
+  }
+
+  /**
+   * Gets all reachable productions in the grammar.
+   */
+  getReachableProductions(): Production[] {
+    return this.productions.filter(p => this.isProductionReachable(p));
+  }
+
+  /**
+   * Gets all unreachable productions in the grammar.
+   */
+  getUnreachableProductions(): Production[] {
+    return this.productions.filter(p => !this.isProductionReachable(p));
+  }
+
 }
 
-class ContextFreeGrammar extends Grammar {
-  isConverted() {
-    return false
-  }
-  checkProduction(production: Production) {
-    //LHS cannot be empty
-    if (!production.lhs || production.lhs.trim() === ""){
-      throw new Error("LHS cannot be empty")
-    }
-    // LHS must be a single variable for CFG
-    if (production.lhs.length !== 1 || !/[A-Z]/.test(production.lhs)) {
-      throw new Error('LHS must be a single uppercase variable for CFG')
-    }
-    //RHS has to contain something
-    if (production.rhs === undefined || production.rhs === null) {
-      throw new Error('RHS cannot be null')
-    }
-  }
-}
+  
 
+  function rightLinearCheck(grammar: ConcreteGrammar) {
+    let productions = grammar.getProductions()
+    for (let i = 0; i < productions.length; i++){
+      //LHS cannot be empty
+      if (!productions[i].lhs || productions[i].lhs.trim() === ""){
+        return false
+      }
+      // LHS must be a single variable for Right Linear Grammar
+      if (productions[i].lhs.length !== 1 || !/[A-Z]/.test(productions[i].lhs)) {
+        return false
+      }
+      // RHS cannot have only one non-terminal symbol
+      if (productions[i].rhs.length === 1 && /[A-Z]/.test(productions[i].rhs)){
+        return false
+      }
+      // RHS cannot have terminals or non-termianls following a non-terminal symbol for an Right-Linear Grammar
+      if (/[A-Z](?:[A-Za-z])+/.test(productions[i].rhs)){
+        return false
+      }
+    }
+    return true
+  }
+
+  function leftLinearCheck(grammar: ConcreteGrammar) {
+    let productions = grammar.getProductions()
+    for (let i = 0; i < productions.length; i++){
+      //LHS cannot be empty
+      if (!productions[i].lhs || productions[i].lhs.trim() === ""){
+        return false
+      }
+      // LHS must be a single variable for Right Linear Grammar
+      if (productions[i].lhs.length !== 1 || !/[A-Z]/.test(productions[i].lhs)) {
+        return false
+      }
+      // RHS cannot have only one non-terminal symbol
+      if (productions[i].rhs.length === 1 && /[A-Z]/.test(productions[i].rhs)){
+        return false
+      }
+      // RHS cannot have terminals or non-termianls following a non-terminal symbol for an Right-Linear Grammar
+      if (/(?:[A-Za-z])+[A-Z]/.test(productions[i].rhs)){
+        return false
+      }
+    }
+    return true
+  }
+
+ type ProductionRow = {
+  id: number;
+  lhs: string;
+  rhs: string;
+};
 
 function Grammars() {
-  const [productions, setProductions] = useState([
-    { id: 1, lhs: '', rhs: '' },
-    { id: 2, lhs: '', rhs: '' },
-    { id: 3, lhs: '', rhs: '' },
-    { id: 4, lhs: '', rhs: '' },
-    { id: 5, lhs: '', rhs: '' },
-    { id: 6, lhs: '', rhs: '' },
-  ]);
-
+  const location = useLocation();
+  const importedProductions = location.state?.productions ?? null;
+  
+  const [productions, setProductions] = useState<ProductionRow[]>(() => {
+    if (importedProductions) {
+      // imported grammar from file into editor
+      return importedProductions.map((p: any, i: number) => ({
+        id: Date.now() + i,
+        lhs: p.lhs,
+        rhs: p.rhs
+      })).concat([
+        { id: Date.now() + 9999, lhs: "", rhs: "" }
+      ]);
+    }
+  
+    // default blank grammar
+    return [
+      { id: 1, lhs: "", rhs: "" },
+      { id: 2, lhs: "", rhs: "" },
+      { id: 3, lhs: "", rhs: "" },
+      { id: 4, lhs: "", rhs: "" },
+      { id: 5, lhs: "", rhs: "" },
+      { id: 6, lhs: "", rhs: "" },
+    ];
+  });
+  
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [openGrammarTest, setOpenCard] = useState<boolean>(false);
+  const [grammarTestResults, setGrammarTestResults] = useState<{
+  isContextFree: boolean;
+  isRightLinear: boolean;
+  isLeftLinear: boolean;
+  isChomskyNormalForm: boolean;
+} | null>(null);
   
   const lastFocusedInput = useRef<HTMLInputElement | null>(null);
 
@@ -278,7 +453,6 @@ function Grammars() {
       // if clicked outside the menu bar, close menus
       if (!target || !target.closest('.menu-bar')) {
         setOpenMenu(null);
-        setOpenSubmenu(null);
       }
     };
 
@@ -316,38 +490,76 @@ function Grammars() {
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `file:New...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
+                  setProductions([
+                    { id: 1, lhs: "", rhs: "" },
+                    { id: 2, lhs: "", rhs: "" },
+                    { id: 3, lhs: "", rhs: "" },
+                    { id: 4, lhs: "", rhs: "" },
+                    { id: 5, lhs: "", rhs: "" },
+                    { id: 6, lhs: "", rhs: "" },
+                  ]);
+                  setOpenMenu(null);
                 }}
               >
-                New...
-                {openSubmenu === `file:New...` && (
-                  <div className="submenu">
-                    <div className="menu-option">From Scratch</div>
-                    <div className="menu-option">From Template</div>
-                  </div>
-                )}
+                New Blank File
               </div>
 
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `file:Open...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.jff';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      const { parseJFFFile, extractGrammarProductions } = await import('./jffParser');
+                      const parsed = await parseJFFFile(file);
+                      if (parsed.projectType === 'grammar') {
+                        const prods = extractGrammarProductions(parsed.xml);
+                        setProductions(prods.map((p, i) => ({
+                          id: Date.now() + i,
+                          lhs: p.lhs,
+                          rhs: p.rhs
+                        })).concat([{ id: Date.now() + 9999, lhs: "", rhs: "" }]));
+                      } else {
+                        alert('This file is not a grammar JFF file.');
+                      }
+                    }
+                  };
+                  input.click();
+                  setOpenMenu(null);
                 }}
               >
-                Open...
-                {openSubmenu === `file:Open...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Local</div>
-                    <div className="menu-option">Open URL</div>
-                  </div>
-                )}
+                Import JFF File
               </div>
 
-              <div className="menu-option">Save</div>
-              <div className="menu-option">Save As...</div>
-              <div className="menu-option">Close</div>
+              <div
+                className="menu-option"
+                onClick={() => {
+                  const validProductions = productions.filter(p => p.lhs.trim() !== '' || p.rhs.trim() !== '');
+                  const productionsXml = validProductions.map(p => 
+                    `  <production>\n    <left>${p.lhs}</left>\n    <right>${p.rhs}</right>\n  </production>`
+                  ).join('\n');
+                  
+                  const jffContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<structure>
+  <type>grammar</type>
+${productionsXml}
+</structure>`;
+                  
+                  const blob = new Blob([jffContent], { type: 'application/xml' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'grammar.jff';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  setOpenMenu(null);
+                }}
+              >
+                Export JFF File
+              </div>
             </div>
           )}
         </div>
@@ -364,33 +576,29 @@ function Grammars() {
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `input:Build LL(1) Parse Table`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Build LL(1) Parse Table
-                {openSubmenu === `input:Build LL(1) Parse Table` && (
-                  <div className="submenu">
-                    <div className="menu-option">Show Table</div>
-                    <div className="menu-option">Export...</div>
-                  </div>
-                )}
-              </div>
+                  try{
+                    const grammarWrapper = new ConcreteGrammar();
+                    productions.forEach(p => {
+                    const lhs = p.lhs.trim();
+                    const rhs = p.rhs.trim();
+                    if (lhs !== '' || rhs !== '') {
+                      grammarWrapper.addProduction(new Production(lhs, rhs));
+                    }
+                    });
+                    grammarWrapper.setStartVariable(productions.find(p => p.lhs.trim() !== '')?.lhs.trim() || 'S');
 
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `input:Build SLR(1) Parse Table`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
+                    localStorage.setItem('webflap:bruteForceGrammar', JSON.stringify(grammarWrapper.toJSON()));
+                    
+                  }
+                  catch (err) {
+                    console.error('Failed to save grammar to localStorage', err);
+                  }
+                  // open new tab at route /bruteforce
+                  const w = window.open('/WebFlap/#/bruteforce', '_blank');
+                  if (w) w.focus();
                 }}
               >
-                Build SLR(1) Parse Table
-                {openSubmenu === `input:Build SLR(1) Parse Table` && (
-                  <div className="submenu">
-                    <div className="menu-option">Show Table</div>
-                    <div className="menu-option">Export...</div>
-                  </div>
-                )}
+                Brute Force Parse
               </div>
 
               <div
@@ -414,182 +622,89 @@ function Grammars() {
                     console.error('Failed to save grammar to localStorage', err);
                   }
                   // open new tab at route /bruteforce
-                  const w = window.open('/bruteforce', '_blank');
+                  const w = window.open('/WebFlap/#/multiplebruteforce', '_blank');
                   if (w) w.focus();
                 }}
               >
-                Brute Force Parse
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `input:Multiple Brute Force Parse`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
                 Multiple Brute Force Parse
-                {openSubmenu === `input:Multiple Brute Force Parse` && (
-                  <div className="submenu">
-                    <div className="menu-option">Start Batch</div>
-                    <div className="menu-option">Load Inputs...</div>
-                    <div className="menu-option">Cancel</div>
-                  </div>
-                )}
               </div>
 
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `input:User Control Parse`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                User Control Parse
-                {openSubmenu === `input:User Control Parse` && (
-                  <div className="submenu">
-                    <div className="menu-option">Start Interactive</div>
-                    <div className="menu-option">Instructions</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `input:CYK Parse`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                CYK Parse
-                {openSubmenu === `input:CYK Parse` && (
-                  <div className="submenu">
-                    <div className="menu-option">Start CYK</div>
-                    <div className="menu-option">Show Table</div>
-                  </div>
-                )}
-              </div>
             </div>
           )}
         </div>
 
         <div className="menu-item">
           <button 
-            className="menu-button"
-            onClick={() => setOpenMenu(openMenu === 'convert' ? null : 'convert')}
+          className="menu-button" 
+          onClick={() => setOpenMenu(openMenu === 'test' ? null : 'test')}
           >
-            Convert
+            Test
           </button>
-          {openMenu === 'convert' && (
+          {openMenu === 'test' && (
             <div className="dropdown-menu">
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `convert:Convert CFG to PDA (LL)`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
+                    setOpenCard(true);
+                    const grammarWrapper = new ConcreteGrammar();
+                    productions.forEach(p => {
+                    const lhs = p.lhs.trim();
+                    const rhs = p.rhs.trim();
+                    if (lhs !== '' || rhs !== '') {
+                      grammarWrapper.addProduction(new Production(lhs, rhs));
+                    }
+                    });
+                    let isContextFree = contextFreeGrammar.isContextFree(grammarWrapper);
+                    let isRightLinear = rightLinearCheck(grammarWrapper);
+                    let isLeftLinear = leftLinearCheck(grammarWrapper);
+                    let isChomskyNormalForm = ChomskyNormalFormGrammar.isChomskyNormalForm(grammarWrapper);
+                    setGrammarTestResults({
+                      isContextFree,
+                      isRightLinear,
+                      isLeftLinear,
+                      isChomskyNormalForm
+                })
+                    
                 }}
               >
-                Convert CFG to PDA (LL)
-                {openSubmenu === `convert:Convert CFG to PDA (LL)` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Converter</div>
-                    <div className="menu-option">Options...</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `convert:Convert CFG to PDA (LR)`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Convert CFG to PDA (LR)
-                {openSubmenu === `convert:Convert CFG to PDA (LR)` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Converter</div>
-                    <div className="menu-option">Options...</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `convert:Convert Right-Linear Grammar to FA`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Convert Right-Linear Grammar to FA
-                {openSubmenu === `convert:Convert Right-Linear Grammar to FA` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Converter</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `convert:Transform Grammar`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Transform Grammar
-                {openSubmenu === `convert:Transform Grammar` && (
-                  <div className="submenu">
-                    <div className="menu-option">Left Factoring</div>
-                    <div className="menu-option">Eliminate Left Recursion</div>
-                  </div>
-                )}
-              </div>
+                Test for Grammar Type
+              </div> 
+              <Modal open={openGrammarTest} onClose={() => {setOpenCard(false)}} >
+                <div className="mt-4">
+                  <h2 className="text-xl font-bold mb-4">Grammar Test Results</h2>
+                  {grammarTestResults && (
+                    <div>
+                
+                      {
+                        grammarTestResults.isChomskyNormalForm ? (
+                          <p>This is a Chomsky Normal Form Grammar (Context-Free Grammar)</p>
+                        ) :
+                          grammarTestResults.isContextFree && grammarTestResults.isRightLinear ? (
+                        <p>This is a Right Linear Grammar (Regular Grammar and Context-Free Grammar)</p>
+                      ) : grammarTestResults.isContextFree && grammarTestResults.isLeftLinear ? (
+                        <p>This is a Left Linear Grammar (Regular Grammar and Context-Free Grammar)</p>
+                      ) : grammarTestResults.isContextFree ? (
+                        <p>This is a Context-Free Grammar</p>
+                      ) : (
+                        <p>This grammar does not match standard grammar types</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </Modal>
             </div>
           )}
+
         </div>
-
         <div className="menu-item">
-          <button 
+          <button
             className="menu-button"
-            onClick={() => setOpenMenu(openMenu === 'help' ? null : 'help')}
-          >
-            Help
-          </button>
-          {openMenu === 'help' && (
-            <div className="dropdown-menu">
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `help:Help...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                Help...
-                {openSubmenu === `help:Help...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Documentation</div>
-                    <div className="menu-option">Tutorials</div>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="menu-option"
-                onClick={() => {
-                  const id = `help:About...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
-                }}
-              >
-                About...
-                {openSubmenu === `help:About...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Version</div>
-                    <div className="menu-option">Licenses</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+            onClick={() => {
+              const w = window.open('/WebFlap/#/tutorials', '_blank');
+              if (w) {
+                w.focus();
+              }}}
+          >Help</button>
         </div>
 
         <div className="menu-item">
@@ -650,6 +765,71 @@ function Grammars() {
     </div>
   );
 }
-
 export default Grammars;
+export abstract class ChomskyNormalFormGrammar extends Grammar {
+  static isChomskyNormalForm(grammar: Grammar): boolean {
+    // Check if all productions are in Chomsky Normal Form
+    for (let production of grammar.getProductions()) {
+      const rhs = production.rhs || '';
+      const rhsLength = this.getLength(rhs);
+      if (rhsLength === 1) {
+         if (this.checkLength1(rhs) === false) {
+          return false;
+        }
+      } else if (rhsLength === 2) {
+        if (this.checkLength2(rhs[0], rhs[1]) === false) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
+  //get length of rhs
+  static getLength(rhs: string): number {
+    return rhs.length;
+  }
+  //if length is 1, check if it is a terminal
+  static checkLength1(symbol: string): boolean {
+    return /[a-z0-9]/.test(symbol);
+  }
+  //if length is 2, check both are variables
+  static checkLength2(symbol1: string, symbol2: string): boolean {
+    return /[A-Z]/.test(symbol1) && /[A-Z]/.test(symbol2);
+  }
+
+}
+export abstract class contextFreeGrammar extends Grammar {
+  static isContextFree(grammar: Grammar): boolean {
+    let productions = grammar.getProductions()
+    for (let i = 0; i < productions.length; i++){
+      //LHS cannot be empty
+      if (!this.LHSNotEmpty(productions[i])){
+        return false
+      }
+      // LHS must be a single variable for Context-Free Grammar
+      if (!this.SingleLHSVariable(productions[i])){
+        return false
+      }
+      // RHS cannot be empty
+      if (!this.RHSNotEmpty(productions[i])){
+        return false
+      }
+    }
+    return true
+  }
+  //checks for empty LHS
+  static LHSNotEmpty(production: Production): boolean {
+    return production.lhs.trim() !== "";
+  }
+  //checks for single variable in LHS
+  static SingleLHSVariable(production: Production): boolean {
+    return production.lhs.length === 1 && /[A-Z]/.test(production.lhs);
+  }
+  //checks for empty RHS
+  static RHSNotEmpty(production: Production): boolean {
+    return production.rhs.trim() !== "";
+  }
+}
 
