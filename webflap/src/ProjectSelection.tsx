@@ -21,7 +21,7 @@ export default function ProjectSelection() {
       return;
     }
     
-    const { xml, projectType } = await parseJFFFile(uploaded);
+    const { projectType } = await parseJFFFile(uploaded);
 
     setFile(uploaded);
     setFileType(projectType);

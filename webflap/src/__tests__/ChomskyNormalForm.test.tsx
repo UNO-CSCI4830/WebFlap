@@ -1,7 +1,7 @@
 import { TextEncoder, TextDecoder } from 'util';
 Object.assign(global, { TextEncoder, TextDecoder });
 
-import {ChomskyNormalFormGrammar, ConcreteGrammar, Grammar, Production} from '../Grammars';
+import {ChomskyNormalFormGrammar, ConcreteGrammar, Production} from '../Grammars';
 
 describe('Chomsky Normal Form Tests length tests', () => {
     test('Should get length of RHS', () => {
