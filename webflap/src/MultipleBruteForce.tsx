@@ -195,6 +195,37 @@ function MultipleBruteForceParse() {
               </div>
             ))}
           </div>
+          <button
+              onClick={() => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.txt';
+                input.onchange = async (e) => {
+                  const file = (e.target as HTMLInputElement).files?.[0];
+                  if (!file) {
+                    return;
+                  }
+                  const text = await file.text();
+                  //filters out empty lines and trims whitespace. Then adds each line as a separate input for batch testing
+                  const testInputs = text.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.length > 0);
+                  setInputs(testInputs.concat(['']));
+                };
+                input.click();
+                return;
+              }}
+              style={{
+                  marginTop: 12,
+                  padding: '8px 12px',
+                  background: '#2563eb',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 6,
+                  cursor: running ? 'default' : 'pointer',
+                  opacity: running ? 0.7 : 1,
+                  width: '50%',
+                  height: '40px',
+                }}
+            >Enter Text File</button>
 
           {/* Two-column layout for results */}
           <div
@@ -269,6 +300,7 @@ function MultipleBruteForceParse() {
                 {running ? 'Parsing...' : 'Start Parse All'}
               </button>
             </div>
+            
 
             {/* Right column: Results */}
             <div>
@@ -296,6 +328,7 @@ function MultipleBruteForceParse() {
           </div>
         </div>
       </div>
+
 
       {/* Modal for invalid character */}
       <Modal open={showModal} onClose={() => setShowModal(false)}>
