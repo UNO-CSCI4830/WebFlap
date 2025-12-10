@@ -9,7 +9,7 @@ export interface Tutorial {
 export const tutorials: Tutorial[] = [
   {
     category: "general",
-    title: "Starting a New Project",
+    title: "Start a New Project",
     desc: "Create a new project from one of our app's modules from scratch.",
     steps: [
       "1. Click 'New Project' in the top right corner of the site.",
@@ -21,13 +21,21 @@ export const tutorials: Tutorial[] = [
     category: "general",
     title: "Import Existing Project",
     desc: "Import a project you already have a .jff file of, which can be obtained either in JFlap or WebFlap.",
-    steps: [],
+    steps: [
+      "1. Click 'New Project' in the top right corner of the site.",
+      "2. Select the 'Open Project' button on the right half of the screen next to the chosen file indicator.",
+      "3. Verify that the file represented matches the file you wanted to open. If not, repeat.",
+    ],
   },
   {
     category: "general",
     title: "Site Navigation",
     desc: "Learn how to navigate the site and access the full range of functionality.",
-    steps: [],
+    steps: [
+      "1. Select options in the Navigation Bar at the top of the site to traverse top-level pages.",
+      "2. Learn more about our site's suite of features under the 'Features' tab.",
+      "3. For our core functionality — project creation — click 'New Project' and get started.",
+    ],
   },
   {
     category: "grammars",

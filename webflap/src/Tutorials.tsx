@@ -71,7 +71,7 @@ export default function Tutorials() {
                 {generalTutorial.title}
               </h3>
               {generalTutorial.steps.map((step) => (
-                <p>{step}</p>
+                <p className="text-left py-2">{step}</p>
               ))}
             </div>
           )}
@@ -120,7 +120,7 @@ export default function Tutorials() {
                 {grammarsTutorial.title}
               </h3>
               {grammarsTutorial.steps.map((step) => (
-                <p>{step}</p>
+                <p className="text-left py-2">{step}</p>
               ))}
             </div>
           )}
@@ -169,7 +169,7 @@ export default function Tutorials() {
                 {automataTutorial.title}
               </h3>
               {automataTutorial.steps.map((step) => (
-                <p>{step}</p>
+                <p className="text-left py-2">{step}</p>
               ))}
             </div>
           )}
@@ -220,7 +220,7 @@ export default function Tutorials() {
                 {regexTutorial.title}
               </h3>
               {regexTutorial.steps.map((step) => (
-                <p>{step}</p>
+                <p className="text-left py-2">{step}</p>
               ))}
             </div>
           )}
