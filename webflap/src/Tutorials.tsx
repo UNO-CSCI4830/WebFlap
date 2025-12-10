@@ -1,7 +1,14 @@
 import NavigationBar from "./NavigationBar";
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { tutorials } from "./assets/tutorialsData";
 
 export default function Tutorials() {
+  const [generalTutorial, setGeneralTutorial] = useState<number | null>(null);
+  const [grammarsTutorial, setGrammarsTutorial] = useState<number | null>(null);
+  const [automataTutorial, setAutomataTutorial] = useState<number | null>(null);
+  const [regexTutorial, setRegexTutorial] = useState<number | null>(null);
+
   return (
     <div>
       <NavigationBar />
@@ -21,39 +28,33 @@ export default function Tutorials() {
         <section className="max-w-7xl mx-auto px-6 py-16">
           <h2 className="text-3xl font-semibold text-center mb-10">General</h2>
           <div className="grid md:grid-cols-3 gap-20">
-            {[
-              {
-                title: "Starting a New Project",
-                desc: "Create a new project from one of our app's modules from scratch.",
-              },
-              {
-                title: "Importing Existing Project",
-                desc: "Import a project you already have from a .jff file, which can be obtained either in JFlap or WebFlap.",
-              },
-              {
-                title: "Site Navigation",
-                desc: "Learn how to navigate the site and access the full range of functionality.",
-              },
-            ].map((tutorial) => (
-              <Link
-                to="/tutorials"
+            {/* {[{}, {}, {}].map((tutorial) => (
+              <button
                 key={tutorial.title}
-                className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 transition-all duration-300 hover:scale-105 hover:shadow-lg hover:border-blue-200"
+                className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 transition-all duration-300 hover:scale-102 hover:shadow-lg hover:border-blue-200"
+                onClick={() => setGeneralTutorial(tutorial.id)}
               >
                 <h3 className="text-xl font-semibold mb-3">{tutorial.title}</h3>
                 <p className="text-slate-600 mb-4 text-sm">{tutorial.desc}</p>
-              </Link>
-            ))}
+              </button>
+            ))} */}
           </div>
+          {generalTutorial !== null && (
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 transition-all duration 300 hover:scale-105 hover:shadow-lg hover:border-blue-200 text-center">
+              <h1>Tutorial Name</h1>
+              <p>1. Step 1</p>
+              <p>2. Step 2</p>
+            </div>
+          )}
         </section>
 
-        {/* Grammar Tutotials */}
+        {/* Grammar Tutorials */}
         <section className="max-w-7xl mx-auto px-6 py-16">
           <h2 className="text-3xl font-semibold text-center mb-4">Grammars</h2>
           <h3 className="py-8 text-xl text-center">Coming soon...</h3>
         </section>
 
-        {/* Grammar Tutotials */}
+        {/* Grammar Tutorials */}
         <section className="max-w-7xl mx-auto px-6 py-16">
           <h2 className="text-3xl font-semibold text-center mb-4">Automata</h2>
           <h3 className="py-8 text-xl text-center">Coming soon...</h3>
