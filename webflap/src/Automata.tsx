@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, use } from "react";
 import "./Automata.css";
 import NavigationBar from "./NavigationBar";
-import { useNavigate } from 'react-router-dom';
 
 let allPlacedTransitions: {from: string, to: string, label: string}[] = [];
 // Simple state interface
@@ -40,10 +39,16 @@ export class Automaton {
   }
 
 
-   //Adds a new state at the given coordinates
+   //Adds a new state at the given coordinates (reuses lowest available ID)
   addState(x: number, y: number, initial: boolean = false) {
-    this.states = [...this.states, { id: `q${this.nextId}`, x, y, initial }];
-    this.nextId++;
+    // Find the lowest available state number
+    const usedNumbers = this.states.map(s => parseInt(s.id.substring(1)));
+    let newId = 0;
+    while (usedNumbers.includes(newId)) {
+      newId++;
+    }
+    this.states = [...this.states, { id: `q${newId}`, x, y, initial }];
+    this.nextId = Math.max(this.nextId, newId + 1);
   }
 
   //Marks a state as initial (and unmarks all others)
@@ -151,7 +156,6 @@ export class TransitionHelper {
 }
 
 function Automata() {
-  const navigate = useNavigate();
   // Track which menu is open
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
@@ -209,6 +213,11 @@ function Automata() {
 
   // Helper to find transition at click position
   const getTransitionAt = (x: number, y: number): Transition | null => {
+    // Check if reverse transition exists for bidirectional detection
+    const hasReverse = (fromId: string, toId: string) => {
+      return transitions.some(tr => tr.from === toId && tr.to === fromId);
+    };
+    
     for (const t of transitions) {
       const from = states.find((s) => s.id === t.from);
       const to = states.find((s) => s.id === t.to);
@@ -222,14 +231,21 @@ function Automata() {
           return t;
         }
       } else {
-        // Regular transition - check near the midpoint label
+        // Regular transition - check near the label position
         const angle = Math.atan2(to.y - from.y, to.x - from.x);
         const startX = from.x + 30 * Math.cos(angle);
         const startY = from.y + 30 * Math.sin(angle);
         const endX = to.x - 30 * Math.cos(angle);
         const endY = to.y - 30 * Math.sin(angle);
-        const midX = (startX + endX) / 2;
-        const midY = (startY + endY) / 2 - 10;
+        
+        // Account for curve offset if bidirectional
+        const hasBidirectional = hasReverse(t.from, t.to);
+        const curveOffset = hasBidirectional ? 20 : 0;
+        const perpX = -Math.sin(angle) * curveOffset;
+        const perpY = Math.cos(angle) * curveOffset;
+        const midX = (startX + endX) / 2 + perpX;
+        const midY = (startY + endY) / 2 + perpY - 10;
+        
         if (Math.abs(x - midX) < 30 && Math.abs(y - midY) < 20) {
           return t;
         }
@@ -295,31 +311,50 @@ function Automata() {
         const endX = to.x - 30 * Math.cos(angle);
         const endY = to.y - 30 * Math.sin(angle);
 
+        // Check if there's a reverse transition (bidirectional)
+        const reverseKey = `${toId}->${fromId}`;
+        const hasBidirectional = groupedTransitions.has(reverseKey);
+        
+        // Curve offset for bidirectional arrows
+        const curveOffset = hasBidirectional ? 20 : 0;
+        const perpX = -Math.sin(angle) * curveOffset;
+        const perpY = Math.cos(angle) * curveOffset;
+        const ctrlX = (startX + endX) / 2 + perpX;
+        const ctrlY = (startY + endY) / 2 + perpY;
+
         ctx.beginPath();
         ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
+        if (hasBidirectional) {
+          // Draw curved line for bidirectional
+          ctx.quadraticCurveTo(ctrlX, ctrlY, endX, endY);
+        } else {
+          ctx.lineTo(endX, endY);
+        }
         ctx.strokeStyle = "#2563eb";
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Arrowhead
+        // Arrowhead (adjust angle for curved arrow)
         const headlen = 15;
+        const arrowAngle = hasBidirectional 
+          ? Math.atan2(endY - ctrlY, endX - ctrlX) 
+          : angle;
         ctx.beginPath();
         ctx.moveTo(endX, endY);
         ctx.lineTo(
-          endX - headlen * Math.cos(angle - Math.PI / 6),
-          endY - headlen * Math.sin(angle - Math.PI / 6)
+          endX - headlen * Math.cos(arrowAngle - Math.PI / 6),
+          endY - headlen * Math.sin(arrowAngle - Math.PI / 6)
         );
         ctx.moveTo(endX, endY);
         ctx.lineTo(
-          endX - headlen * Math.cos(angle + Math.PI / 6),
-          endY - headlen * Math.sin(angle + Math.PI / 6)
+          endX - headlen * Math.cos(arrowAngle + Math.PI / 6),
+          endY - headlen * Math.sin(arrowAngle + Math.PI / 6)
         );
         ctx.stroke();
 
-        // Draw labels stacked vertically (newest on top)
-        const midX = (startX + endX) / 2;
-        const midY = (startY + endY) / 2;
+        // Draw labels at midpoint (or curve peak for bidirectional)
+        const midX = hasBidirectional ? ctrlX : (startX + endX) / 2;
+        const midY = hasBidirectional ? ctrlY : (startY + endY) / 2;
         ctx.fillStyle = "#000";
         ctx.font = "14px Arial";
         ctx.textAlign = "center";
