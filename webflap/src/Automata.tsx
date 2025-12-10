@@ -515,10 +515,7 @@ function Automata() {
           </button>
           {openMenu === "input" && (
             <div className="dropdown-menu">
-              <div className="menu-option">Step with Closure...</div>
-              <div className="menu-option">Step by State...</div>
-              <div 
-              className="menu-option">Multiple Run</div>
+              
           <div
             className="menu-option"
             onClick={() => {
