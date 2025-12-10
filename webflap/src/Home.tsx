@@ -1,5 +1,9 @@
 import NavigationBar from "./NavigationBar";
+import ImageCarousel from "./ImageCarousel";
 import { Link } from "react-router-dom";
+import automata_example from "./assets/img/automata_example.png";
+import regex_example from "./assets/img/regex_example.png";
+import grammar_example from "./assets/img/grammar_example.png";
 
 export default function Home() {
   return (
@@ -37,10 +41,7 @@ export default function Home() {
 
                 <div className="flex-1">
                 <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg bg-white border border-slate-200 hover:scale-105 transform transition-transform duration-300">
-                    <img
-                    src=""
-                    className="w-full h-full object-cover opacity-90"
-                    />
+                    <ImageCarousel images={[automata_example, regex_example, grammar_example]} />
                 </div>
                 </div>
             </section>

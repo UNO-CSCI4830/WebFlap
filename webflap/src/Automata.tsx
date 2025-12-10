@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, use } from "react";
+import { useLocation } from "react-router-dom";
 import "./Automata.css";
 import NavigationBar from "./NavigationBar";
+import type { ParsedAutomaton } from "./jffParser";
+
 
 let allPlacedTransitions: {from: string, to: string, label: string}[] = [];
 // Simple state interface
@@ -201,11 +204,31 @@ export class TransitionHelper {
 }
 
 export function Automata() {
+  const location = useLocation();
+  const imported = (location.state?.automaton as ParsedAutomaton) ?? null;
   // Track which menu is open
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
   // Automaton data with undo/redo history
-  const [automaton, setAutomaton] = useState(new Automaton());
+  const [automaton, setAutomaton] = useState(() => {
+    if (!imported) return new Automaton();
+  
+    const states = imported.states.map(s => ({
+      id: s.name,          // use name as ID for display
+      x: s.x,
+      y: s.y,
+      initial: s.initial,
+      final: s.final,
+    }));
+  
+    const transitions = imported.transitions.map(t => ({
+      from: imported.states.find(s => s.id === t.from)!.name,
+      to: imported.states.find(s => s.id === t.to)!.name,
+      label: t.read,
+    }));
+  
+    return new Automaton(states, transitions, states.length);
+  });
   const [history, setHistory] = useState<Automaton[]>([new Automaton()]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const { states, transitions } = automaton;

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from "react-router-dom";
 import NavigationBar from "./NavigationBar";
 import Modal from './PopCard';
 import './Grammars.css';
@@ -379,16 +380,39 @@ export class ConcreteGrammar extends Grammar {
     return true
   }
 
-function Grammars() {
-  const [productions, setProductions] = useState([
-    { id: 1, lhs: '', rhs: '' },
-    { id: 2, lhs: '', rhs: '' },
-    { id: 3, lhs: '', rhs: '' },
-    { id: 4, lhs: '', rhs: '' },
-    { id: 5, lhs: '', rhs: '' },
-    { id: 6, lhs: '', rhs: '' },
-  ]);
+ type ProductionRow = {
+  id: number;
+  lhs: string;
+  rhs: string;
+};
 
+function Grammars() {
+  const location = useLocation();
+  const importedProductions = location.state?.productions ?? null;
+  
+  const [productions, setProductions] = useState<ProductionRow[]>(() => {
+    if (importedProductions) {
+      // imported grammar from file into editor
+      return importedProductions.map((p: any, i: number) => ({
+        id: Date.now() + i,
+        lhs: p.lhs,
+        rhs: p.rhs
+      })).concat([
+        { id: Date.now() + 9999, lhs: "", rhs: "" }
+      ]);
+    }
+  
+    // default blank grammar
+    return [
+      { id: 1, lhs: "", rhs: "" },
+      { id: 2, lhs: "", rhs: "" },
+      { id: 3, lhs: "", rhs: "" },
+      { id: 4, lhs: "", rhs: "" },
+      { id: 5, lhs: "", rhs: "" },
+      { id: 6, lhs: "", rhs: "" },
+    ];
+  });
+  
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const [openGrammarTest, setOpenCard] = useState<boolean>(false);
