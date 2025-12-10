@@ -58,9 +58,16 @@ export interface ParsedJFFTransition {
   read: string;
 }
 
+export interface ParsedJFFNote {
+  text: string;
+  x: number;
+  y: number;
+}
+
 export interface ParsedAutomaton {
   states: ParsedJFFState[];
   transitions: ParsedJFFTransition[];
+  notes: ParsedJFFNote[];
 }
 
 export function parseAutomatonJFF(xmlText: string): ParsedAutomaton {
@@ -69,6 +76,7 @@ export function parseAutomatonJFF(xmlText: string): ParsedAutomaton {
 
   const stateNodes = Array.from(xml.getElementsByTagName("state"));
   const transitionNodes = Array.from(xml.getElementsByTagName("transition"));
+  const noteNodes = Array.from(xml.getElementsByTagName("note"));
 
   const states: ParsedJFFState[] = stateNodes.map((node) => ({
     id: node.getAttribute("id") ?? "",
@@ -85,5 +93,12 @@ export function parseAutomatonJFF(xmlText: string): ParsedAutomaton {
     read: node.getElementsByTagName("read")[0]?.textContent ?? "ε",
   }));
 
-  return { states, transitions };
+  // Extract notes from JFF file
+  const notes: ParsedJFFNote[] = noteNodes.map((node) => ({
+    text: node.getElementsByTagName("text")[0]?.textContent?.trim() ?? "",
+    x: parseFloat(node.getElementsByTagName("x")[0]?.textContent ?? "100"),
+    y: parseFloat(node.getElementsByTagName("y")[0]?.textContent ?? "100"),
+  }));
+
+  return { states, transitions, notes };
 }

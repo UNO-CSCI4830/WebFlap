@@ -414,7 +414,6 @@ function Grammars() {
   });
   
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const [openGrammarTest, setOpenCard] = useState<boolean>(false);
   const [grammarTestResults, setGrammarTestResults] = useState<{
   isContextFree: boolean;
@@ -454,7 +453,6 @@ function Grammars() {
       // if clicked outside the menu bar, close menus
       if (!target || !target.closest('.menu-bar')) {
         setOpenMenu(null);
-        setOpenSubmenu(null);
       }
     };
 
@@ -492,38 +490,76 @@ function Grammars() {
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `file:New...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
+                  setProductions([
+                    { id: 1, lhs: "", rhs: "" },
+                    { id: 2, lhs: "", rhs: "" },
+                    { id: 3, lhs: "", rhs: "" },
+                    { id: 4, lhs: "", rhs: "" },
+                    { id: 5, lhs: "", rhs: "" },
+                    { id: 6, lhs: "", rhs: "" },
+                  ]);
+                  setOpenMenu(null);
                 }}
               >
-                New...
-                {openSubmenu === `file:New...` && (
-                  <div className="submenu">
-                    <div className="menu-option">From Scratch</div>
-                    <div className="menu-option">From Template</div>
-                  </div>
-                )}
+                New Blank File
               </div>
 
               <div
                 className="menu-option"
                 onClick={() => {
-                  const id = `file:Open...`;
-                  setOpenSubmenu(openSubmenu === id ? null : id);
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = '.jff';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      const { parseJFFFile, extractGrammarProductions } = await import('./jffParser');
+                      const parsed = await parseJFFFile(file);
+                      if (parsed.projectType === 'grammar') {
+                        const prods = extractGrammarProductions(parsed.xml);
+                        setProductions(prods.map((p, i) => ({
+                          id: Date.now() + i,
+                          lhs: p.lhs,
+                          rhs: p.rhs
+                        })).concat([{ id: Date.now() + 9999, lhs: "", rhs: "" }]));
+                      } else {
+                        alert('This file is not a grammar JFF file.');
+                      }
+                    }
+                  };
+                  input.click();
+                  setOpenMenu(null);
                 }}
               >
-                Open...
-                {openSubmenu === `file:Open...` && (
-                  <div className="submenu">
-                    <div className="menu-option">Open Local</div>
-                    <div className="menu-option">Open URL</div>
-                  </div>
-                )}
+                Import JFF File
               </div>
 
-              <div className="menu-option">Save</div>
-              <div className="menu-option">Save As...</div>
-              <div className="menu-option">Close</div>
+              <div
+                className="menu-option"
+                onClick={() => {
+                  const validProductions = productions.filter(p => p.lhs.trim() !== '' || p.rhs.trim() !== '');
+                  const productionsXml = validProductions.map(p => 
+                    `  <production>\n    <left>${p.lhs}</left>\n    <right>${p.rhs}</right>\n  </production>`
+                  ).join('\n');
+                  
+                  const jffContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<structure>
+  <type>grammar</type>
+${productionsXml}
+</structure>`;
+                  
+                  const blob = new Blob([jffContent], { type: 'application/xml' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'grammar.jff';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  setOpenMenu(null);
+                }}
+              >
+                Export JFF File
+              </div>
             </div>
           )}
         </div>
