@@ -32,6 +32,17 @@ export default function Tutorials() {
         <section className="max-w-7xl mx-auto px-6 py-16 grid gap-10">
           <h2 className="text-3xl font-semibold text-center">General</h2>
           <div className="grid md:grid-cols-3 gap-20">
+            <a
+              href="https://youtu.be/IPzJMhBZpdw"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 transition-all duration-300 hover:scale-102 hover:shadow-lg hover:border-blue-200 cursor-pointer text-left"
+            >
+              <h3 className="text-xl font-semibold mb-3">
+                Starting a Project in WebFlap!
+              </h3>
+              <p className="text-slate-600 mb-4 text-sm">Watch a video tutorial on how to get started with a new project in WebFlap!</p>
+            </a>
             {tutorials
               .filter((t) => t.category === "general")
               .map((tutorial) => (
@@ -86,6 +97,17 @@ export default function Tutorials() {
         <section className="max-w-7xl mx-auto px-6 py-16 grid gap-10">
           <h2 className="text-3xl font-semibold text-center">Grammars</h2>
           <div className="grid md:grid-cols-3 gap-20">
+            <a
+              href="https://youtu.be/I7XKzOYRv0I"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 transition-all duration-300 hover:scale-102 hover:shadow-lg hover:border-blue-200 cursor-pointer text-left"
+            >
+              <h3 className="text-xl font-semibold mb-3">
+                Grammars Video Tutorial
+              </h3>
+              <p className="text-slate-600 mb-4 text-sm">Watch a video walkthrough of using Grammars in WebFlap!</p>
+            </a>
             {tutorials
               .filter((t) => t.category === "grammars")
               .map((tutorial) => (
