@@ -841,7 +841,7 @@ ${notesXml}
             className="menu-button"
             
             onClick={() => {
-              const w = window.open('/tutorials', '_blank');
+              const w = window.open('/WebFlap/#/tutorials', '_blank');
               if (w) {
                 w.focus();
               }

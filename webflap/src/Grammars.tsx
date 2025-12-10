@@ -594,7 +594,7 @@ ${productionsXml}
                     console.error('Failed to save grammar to localStorage', err);
                   }
                   // open new tab at route /bruteforce
-                  const w = window.open('/bruteforce', '_blank');
+                  const w = window.open('/WebFlap/#/bruteforce', '_blank');
                   if (w) w.focus();
                 }}
               >
@@ -622,7 +622,7 @@ ${productionsXml}
                     console.error('Failed to save grammar to localStorage', err);
                   }
                   // open new tab at route /bruteforce
-                  const w = window.open('/multiplebruteforce', '_blank');
+                  const w = window.open('/WebFlap/#/multiplebruteforce', '_blank');
                   if (w) w.focus();
                 }}
               >
@@ -700,7 +700,7 @@ ${productionsXml}
           <button
             className="menu-button"
             onClick={() => {
-              const w = window.open('/tutorials', '_blank');
+              const w = window.open('/WebFlap/#/tutorials', '_blank');
               if (w) {
                 w.focus();
               }}}
