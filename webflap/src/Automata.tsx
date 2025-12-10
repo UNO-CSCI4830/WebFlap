@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, use } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import "./Automata.css";
 import NavigationBar from "./NavigationBar";
@@ -841,7 +841,7 @@ ${notesXml}
             className="menu-button"
             
             onClick={() => {
-              const w = window.open('/tutorials', '_blank');
+              const w = window.open('/WebFlap/#/tutorials', '_blank');
               if (w) {
                 w.focus();
               }
