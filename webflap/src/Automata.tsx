@@ -79,6 +79,17 @@ export class Automaton {
     );
   }
 
+  //Deletes a specific transition by from, to, and label
+  deleteTransition(from: string, to: string, label: string) {
+    this.transitions = this.transitions.filter(
+      (t) => !(t.from === from && t.to === to && t.label === label)
+    );
+    // Remove from allPlacedTransitions too
+    allPlacedTransitions = allPlacedTransitions.filter(
+      (t) => !(t.from === from && t.to === to && t.label === label)
+    );
+  }
+
   //Finds a state at the given coordinates
   getStateAt(x: number, y: number): State | null {
     return this.states.find((s) => {
@@ -194,6 +205,37 @@ function Automata() {
   // Helper to find comment at position
   const getCommentAt = (x: number, y: number): Comment | null => {
     return comments.find((c) => Math.abs(c.x - x) < 50 && Math.abs(c.y - y) < 15) || null;
+  };
+
+  // Helper to find transition at click position
+  const getTransitionAt = (x: number, y: number): Transition | null => {
+    for (const t of transitions) {
+      const from = states.find((s) => s.id === t.from);
+      const to = states.find((s) => s.id === t.to);
+      if (!from || !to) continue;
+
+      // Check if self-loop (label is above the state)
+      if (t.from === t.to) {
+        const labelX = from.x;
+        const labelY = from.y - 75;
+        if (Math.abs(x - labelX) < 30 && Math.abs(y - labelY) < 20) {
+          return t;
+        }
+      } else {
+        // Regular transition - check near the midpoint label
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        const startX = from.x + 30 * Math.cos(angle);
+        const startY = from.y + 30 * Math.sin(angle);
+        const endX = to.x - 30 * Math.cos(angle);
+        const endY = to.y - 30 * Math.sin(angle);
+        const midX = (startX + endX) / 2;
+        const midY = (startY + endY) / 2 - 10;
+        if (Math.abs(x - midX) < 30 && Math.abs(y - midY) < 20) {
+          return t;
+        }
+      }
+    }
+    return null;
   };
 
   // Close menus when clicking outside
@@ -384,11 +426,26 @@ function Automata() {
       }
 
     } else if (selectedTool === "delete") {
+      // First check if clicking on a state
       const state = automaton.getStateAt(x, y);
       if (state) {
         const newAutomaton = automaton.clone();
         newAutomaton.deleteState(state.id);
         updateAutomaton(newAutomaton);
+        return;
+      }
+      // Check if clicking on a transition label
+      const transition = getTransitionAt(x, y);
+      if (transition) {
+        const newAutomaton = automaton.clone();
+        newAutomaton.deleteTransition(transition.from, transition.to, transition.label);
+        updateAutomaton(newAutomaton);
+        return;
+      }
+      // Check if clicking on a comment
+      const comment = getCommentAt(x, y);
+      if (comment) {
+        setComments(comments.filter((c) => c.id !== comment.id));
       }
     } else if (selectedTool === "select") {
       const comment = getCommentAt(x, y);
