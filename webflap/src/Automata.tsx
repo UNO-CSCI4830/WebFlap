@@ -23,9 +23,29 @@ export interface Transition {
 }
 export function simulateAutomaton(automaton: Automaton, input: string): boolean {
   // Find initial state(s)
-  let currentStates = automaton.states
+  function epsilonClosure(states: string[]): string[] {
+    const closure = new Set<string>(states);
+    const stack = [...states];
+    
+    while (stack.length > 0) {
+      const state = stack.pop()!;
+      
+      // Find all epsilon transitions from this state
+      automaton.transitions.forEach(t => {
+        if (t.from === state && (t.label === '' || t.label === 'ε' )) {
+          if (!closure.has(t.to)) {
+            closure.add(t.to);
+            stack.push(t.to);
+          }
+        }
+      });
+    }
+    return Array.from(closure);
+  }
+  let initialStates = automaton.states
     .filter(s => s.initial)
     .map(s => s.id);
+  let currentStates = epsilonClosure(initialStates);
 
   // Process each symbol in the input
   for (const symbol of input) {
@@ -37,7 +57,7 @@ export function simulateAutomaton(automaton: Automaton, input: string): boolean 
       }
     });
     
-    currentStates = Array.from(nextStates);
+    currentStates = epsilonClosure(Array.from(nextStates));
   }
 
   // Check if any current state is a final state
