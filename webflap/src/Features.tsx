@@ -30,25 +30,25 @@ export default function Features() {
               {
                 title: "Finite Automata",
                 desc: "Design and simulate Deterministic (DFA) and Non-Deterministic (NFA) Finite Automata with visual state transitions.",
-                icon: "🔄",
+                icon: "",
                 features: ["DFA & NFA support", "State minimization", "NFA to DFA conversion", "Visual simulation"]
               },
               {
                 title: "Regular Expressions",
                 desc: "Create and test regular expressions with instant pattern matching and validation.",
-                icon: "🔤",
+                icon: "",
                 features: ["Pattern builder", "Live testing", "Convert to automata", "Syntax highlighting"]
               },
               {
                 title: "Context-Free Grammars",
                 desc: "Define production rules, generate parse trees, and visualize derivations step by step.",
-                icon: "📜",
+                icon: "",
                 features: ["Grammar editor", "Parse tree generation", "Derivation steps", "Ambiguity detection"]
               },
               {
                 title: "Turing Machines",
                 desc: "Build and execute Turing Machines with complete tape visualization and control.",
-                icon: "🤖",
+                icon: "",
                 features: ["Unlimited tape", "Multi-track support", "Step-by-step execution", "Halting detection"]
               }
             ].map((model) => (
@@ -86,37 +86,37 @@ export default function Features() {
               {
                 title: "Interactive Design Tools",
                 desc: "Drag-and-drop interface for building state diagrams. Add states, transitions, and labels with intuitive controls.",
-                icon: "✏️",
+                icon: "",
                 color: "blue"
               },
               {
                 title: "Step-by-Step Debugging",
                 desc: "Walk through each computation step to understand exactly how your automaton processes input strings.",
-                icon: "🐛",
+                icon: "",
                 color: "purple"
               },
               {
                 title: "Input Testing",
                 desc: "Test multiple input strings at once. See which are accepted or rejected, with detailed execution traces.",
-                icon: "✅",
+                icon: "",
                 color: "green"
               },
               {
                 title: "Save & Load Projects",
                 desc: "Never lose your work. Save automata and grammars to your account and continue working anytime, anywhere.",
-                icon: "💾",
+                icon: "",
                 color: "orange"
               },
               {
                 title: "Learning Support",
                 desc: "Built-in tutorials, examples, and tooltips to guide you through complex concepts and operations.",
-                icon: "📚",
+                icon: "",
                 color: "pink"
               },
               {
                 title: "Export & Share",
                 desc: "Export diagrams as images or share project links with classmates and instructors for collaboration.",
-                icon: "🔗",
+                icon: "",
                 color: "teal"
               }
             ].map((func) => (
@@ -141,27 +141,21 @@ export default function Features() {
             <div className="grid md:grid-cols-2 gap-8 mt-12">
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
-                    <span className="text-2xl">⚡</span>
-                  </div>
+                  
                   <div>
                     <h3 className="font-semibold text-lg mb-1">No Installation Required</h3>
                     <p className="text-blue-100 text-sm">Works directly in your browser — Chrome, Firefox, Safari, or Edge.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
-                    <span className="text-2xl">🎓</span>
-                  </div>
+                  
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Education-Focused</h3>
                     <p className="text-blue-100 text-sm">Designed specifically for students and instructors of computational theory courses.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
-                    <span className="text-2xl">🚀</span>
-                  </div>
+                  
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Modern & Fast</h3>
                     <p className="text-blue-100 text-sm">Built with cutting-edge web technologies for smooth, responsive performance.</p>
@@ -170,27 +164,21 @@ export default function Features() {
               </div>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
-                    <span className="text-2xl">💡</span>
-                  </div>
+                  
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Visual & Intuitive</h3>
                     <p className="text-blue-100 text-sm">See your automata in action with beautiful, interactive visualizations.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
-                    <span className="text-2xl">🔒</span>
-                  </div>
+                  
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Secure & Private</h3>
                     <p className="text-blue-100 text-sm">Your projects are stored securely, accessible only to you.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-4">
-                  <div className="bg-white/20 rounded-lg p-3 backdrop-blur-sm">
-                    <span className="text-2xl">🆓</span>
-                  </div>
+                  
                   <div>
                     <h3 className="font-semibold text-lg mb-1">Free for Students</h3>
                     <p className="text-blue-100 text-sm">Access all core features at no cost — because learning should be accessible.</p>

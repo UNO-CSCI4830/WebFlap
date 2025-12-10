@@ -18,6 +18,31 @@ export interface Transition {
   to: string;
   label: string;
 }
+export function simulateAutomaton(automaton: Automaton, input: string): boolean {
+  // Find initial state(s)
+  let currentStates = automaton.states
+    .filter(s => s.initial)
+    .map(s => s.id);
+
+  // Process each symbol in the input
+  for (const symbol of input) {
+    const nextStates = new Set<string>();
+    
+    automaton.transitions.forEach(t => {
+      if (currentStates.includes(t.from) && t.label === symbol) {
+        nextStates.add(t.to);
+      }
+    });
+    
+    currentStates = Array.from(nextStates);
+  }
+
+  // Check if any current state is a final state
+  return currentStates.length > 0 && currentStates.some(sId => {
+    const state = automaton.states.find(s => s.id === sId);
+    return state?.final;
+  });
+}
 
 // Comment interface - text annotations on the canvas
 export interface Comment {
@@ -155,7 +180,7 @@ export class TransitionHelper {
   }
 }
 
-function Automata() {
+export function Automata() {
   // Track which menu is open
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
@@ -607,44 +632,21 @@ function Automata() {
           </button>
           {openMenu === "input" && (
             <div className="dropdown-menu">
-              <div className="menu-option">Step with Closure...</div>
-              <div className="menu-option">Step by State...</div>
-              <div 
-              className="menu-option">Multiple Run</div>
+              
           <div
             className="menu-option"
             onClick={() => {
-              const input = prompt("Enter input string:");
-              if (input !== null) {
-                //this finds initial state
-                  let currentStates = automaton.states.filter(s => s.initial).map(s => s.id);
-                  // Process each symbol in the input
-                  for (const symbol of input) {
-                    const nextStates = new Set<string>();
-                    automaton.transitions.forEach(t => {
-                      // Check if transition is valid from any of the current states
-                      if (currentStates.includes(t.from) && t.label === symbol) {
-                        nextStates.add(t.to);
-                      }
-                    });
-                    // Move to next set of states
-                    currentStates = Array.from(nextStates);
-                  }
-                  // Check if any of the current states is a final state
-                  const isAccepted = currentStates.length > 0 && currentStates.some(sId => {
-                    const state = automaton.states.find(s => s.id === sId);
-                    return state?.final;
-                  });
-                  
-                  if (isAccepted) {
-                    alert(`Input "${input}" is accepted.`);
-                  } else {
-                    alert(`Input "${input}" is rejected.`);
-                  }
-                  
-                
-              }
-            }}
+  const input = prompt("Enter input string:");
+  if (input !== null) {
+    const isAccepted = simulateAutomaton(automaton, input);
+    
+    if (isAccepted) {
+      alert(`Input "${input}" is accepted.`);
+    } else {
+      alert(`Input "${input}" is rejected.`);
+    }
+  }
+}}
           >
             Fast Run
           </div>
